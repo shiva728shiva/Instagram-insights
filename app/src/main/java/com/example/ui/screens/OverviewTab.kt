@@ -45,8 +45,10 @@ import com.example.ui.components.ImpactMetricRow
 import com.example.ui.components.InteractiveRetentionChart
 import com.example.ui.components.InteractiveViewsOverTimeChart
 import com.example.ui.components.MetricProgressBar
+import com.example.ui.components.RollingNumberCounter
 import com.example.ui.components.SectionHeader
 import com.example.ui.components.ShimmerBox
+import com.example.ui.components.rememberShimmerBrush
 import com.example.ui.theme.IgBorder
 import com.example.ui.theme.IgCardBg
 import com.example.ui.theme.IgChartTypicalLine
@@ -133,8 +135,8 @@ fun OverviewTab(
                 if (loading) {
                     ShimmerBox(width = 50.dp, height = 16.dp)
                 } else {
-                    Text(
-                        text = numberFormat.format(data.views),
+                    RollingNumberCounter(
+                        targetValue = data.views,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = IgTextPrimary
@@ -400,22 +402,46 @@ fun SummaryCard(
     loading: Boolean,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(IgCardBg)
-            .padding(horizontal = 14.dp, vertical = 12.dp)
-    ) {
-        Column {
-            Text(
-                text = label,
-                fontSize = 12.5.sp,
-                color = IgTextSecondary,
-                modifier = Modifier.padding(bottom = 6.dp)
-            )
-            if (loading) {
-                ShimmerBox(width = 50.dp, height = 22.dp)
-            } else {
+    if (loading) {
+        val shimmerBrush = rememberShimmerBrush()
+        Box(
+            modifier = modifier
+                .clip(RoundedCornerShape(12.dp))
+                .background(shimmerBrush)
+                .padding(horizontal = 14.dp, vertical = 14.dp)
+        ) {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .width(65.dp)
+                        .height(13.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color(0xFF2E2E32).copy(alpha = 0.6f))
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Box(
+                    modifier = Modifier
+                        .width(55.dp)
+                        .height(22.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color(0xFF3A3A40).copy(alpha = 0.6f))
+                )
+            }
+        }
+    } else {
+        Box(
+            modifier = modifier
+                .clip(RoundedCornerShape(12.dp))
+                .background(IgCardBg)
+                .padding(horizontal = 14.dp, vertical = 12.dp)
+        ) {
+            Column {
+                Text(
+                    text = label,
+                    fontSize = 12.5.sp,
+                    color = IgTextSecondary,
+                    modifier = Modifier.padding(bottom = 6.dp)
+                )
                 Text(
                     text = value,
                     fontSize = 20.sp,

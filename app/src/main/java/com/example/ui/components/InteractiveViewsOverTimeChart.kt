@@ -51,8 +51,8 @@ fun InteractiveViewsOverTimeChart(
         if (lastValid >= 0) lastValid else (dataPoints.size - 1)
     }
     var selectedIndex by remember(dataPoints) {
-        val aug24Index = dataPoints.indexOfFirst { it.dateLabel == "Aug 24" }
-        mutableIntStateOf(if (aug24Index >= 0) aug24Index else 7.coerceAtMost(maxValidIndex))
+        val aug18Index = dataPoints.indexOfFirst { it.dateLabel == "Aug 18" }
+        mutableIntStateOf(if (aug18Index >= 0) aug18Index else 1.coerceAtMost(maxValidIndex))
     }
     var isTouching by remember { mutableStateOf(true) }
 

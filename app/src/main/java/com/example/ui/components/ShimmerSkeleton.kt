@@ -22,34 +22,40 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Composable
+fun rememberShimmerBrush(
+    shimmerColors: List<Color> = listOf(
+        Color(0xFF141416),
+        Color(0xFF28282C),
+        Color(0xFF141416)
+    ),
+    durationMillis: Int = 1100
+): Brush {
+    val transition = rememberInfiniteTransition(label = "shimmerTransition")
+    val translateAnim = transition.animateFloat(
+        initialValue = -300f,
+        targetValue = 1200f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = durationMillis, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmerTranslate"
+    )
+
+    return Brush.linearGradient(
+        colors = shimmerColors,
+        start = Offset(translateAnim.value - 250f, translateAnim.value - 250f),
+        end = Offset(translateAnim.value + 250f, translateAnim.value + 250f)
+    )
+}
+
+@Composable
 fun ShimmerBox(
     modifier: Modifier = Modifier,
     width: Dp? = null,
     height: Dp = 16.dp,
     borderRadius: Dp = 6.dp
 ) {
-    val shimmerColors = listOf(
-        Color(0xFF1C1C1E),
-        Color(0xFF2E2E31),
-        Color(0xFF1C1C1E)
-    )
-
-    val transition = rememberInfiniteTransition(label = "shimmerTransition")
-    val translateAnim = transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1000f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1100, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "shimmerTranslate"
-    )
-
-    val brush = Brush.linearGradient(
-        colors = shimmerColors,
-        start = Offset(translateAnim.value - 200f, translateAnim.value - 200f),
-        end = Offset(translateAnim.value + 200f, translateAnim.value + 200f)
-    )
+    val brush = rememberShimmerBrush()
 
     var boxModifier = modifier
         .clip(RoundedCornerShape(borderRadius))
