@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.data.model.ReelInsightsData
+import com.example.ui.components.FrameScrubVideoPreview
 import com.example.ui.components.IgIcons
 import com.example.ui.theme.IgBackground
 import com.example.ui.theme.IgDivider
@@ -133,33 +134,20 @@ fun InsightsScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             item(key = "thumbnail") {
-                // Reel Thumbnail Preview Box (Matching Real Instagram 9:16 Portrait Dimension)
+                // Reel Thumbnail Preview Box (Matching Real Instagram 9:16 Portrait Dimension) & Video Playback
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .width(115.dp)
-                            .height(155.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(
-                                Brush.verticalGradient(
-                                    listOf(Color(0xFF381A40), Color(0xFF22162E), Color(0xFF14111C))
-                                )
-                            )
-                    ) {
-                        if (data.thumbnailUrl.isNotBlank()) {
-                            AsyncImage(
-                                model = data.thumbnailUrl,
-                                contentDescription = "Reel Thumbnail",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                    }
+                    FrameScrubVideoPreview(
+                        videoUri = data.videoUri,
+                        thumbnailUrl = data.thumbnailUrl,
+                        scrubSecond = 0,
+                        width = 115.dp,
+                        height = 155.dp
+                    )
                 }
             }
 

@@ -76,6 +76,7 @@ fun ProfileScreen(
     profile: UserProfile,
     onSelectReel: (ReelItem) -> Unit,
     onChangeUsernameClick: () -> Unit,
+    onSelectVideoClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableIntStateOf(1) } // 0: Posts, 1: Reels (Default matching Screenshot 2), 2: Tagged
@@ -95,12 +96,14 @@ fun ProfileScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(
-                onClick = { },
-                modifier = Modifier.size(32.dp)
+                onClick = { onSelectVideoClick() },
+                modifier = Modifier
+                    .size(32.dp)
+                    .testTag("create_reel_top_button")
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "Create",
+                    contentDescription = "Create Reel / Select Video",
                     tint = IgTextPrimary,
                     modifier = Modifier.size(28.dp)
                 )
@@ -361,10 +364,10 @@ fun ProfileScreen(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // Edit Profile and Share Profile buttons
+                    // Edit Profile, Share Profile, and Select Video buttons
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Button(
                             onClick = { onChangeUsernameClick() },
@@ -379,8 +382,27 @@ fun ProfileScreen(
                         ) {
                             Text(
                                 text = "Edit profile",
-                                fontSize = 13.5.sp,
+                                fontSize = 12.5.sp,
                                 fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                        Button(
+                            onClick = { onSelectVideoClick() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF0095F6),
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier
+                                .weight(1.1f)
+                                .height(36.dp)
+                                .testTag("select_video_profile_btn")
+                        ) {
+                            Text(
+                                text = "Select Video",
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.Bold
                             )
                         }
 
@@ -396,8 +418,8 @@ fun ProfileScreen(
                                 .height(36.dp)
                         ) {
                             Text(
-                                text = "Share profile",
-                                fontSize = 13.5.sp,
+                                text = "Share",
+                                fontSize = 12.5.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }

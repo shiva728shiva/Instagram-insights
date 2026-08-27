@@ -14,7 +14,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ui.screens.EditorBottomSheet
@@ -22,6 +26,7 @@ import com.example.ui.screens.InsightsScreen
 import com.example.ui.screens.ProfileScreen
 import com.example.ui.screens.ReelPlayerScreen
 import com.example.ui.screens.UsernamePromptDialog
+import com.example.ui.screens.VideoSelectionPromptDialog
 import com.example.ui.theme.IgBackground
 import com.example.ui.theme.MyApplicationTheme
 import com.example.viewmodel.AppScreen
@@ -54,7 +59,9 @@ fun ReelInsightsApp(
     val audienceSubTab by viewModel.audienceSubTab.collectAsStateWithLifecycle()
     val isEditorOpen by viewModel.isEditorOpen.collectAsStateWithLifecycle()
     val showUsernamePrompt by viewModel.showUsernamePrompt.collectAsStateWithLifecycle()
+    var showVideoPickerPrompt by remember { mutableStateOf(false) }
 
+    val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
@@ -75,6 +82,9 @@ fun ReelInsightsApp(
                         },
                         onChangeUsernameClick = {
                             viewModel.setShowUsernamePrompt(true)
+                        },
+                        onSelectVideoClick = {
+                            showVideoPickerPrompt = true
                         }
                     )
                 }
@@ -84,7 +94,10 @@ fun ReelInsightsApp(
                         reel = activeReel,
                         onBackToProfile = { viewModel.navigateTo(AppScreen.PROFILE) },
                         onOpenInsights = { viewModel.navigateTo(AppScreen.REEL_INSIGHTS) },
-                        onOpenEditor = { viewModel.setEditorOpen(true) }
+                        onOpenEditor = { viewModel.setEditorOpen(true) },
+                        onSelectVideoClick = {
+                            showVideoPickerPrompt = true
+                        }
                     )
                 }
 
@@ -103,6 +116,16 @@ fun ReelInsightsApp(
                     )
                 }
             }
+        }
+
+        // Instagram Video Selection & Storage Permission Dialog
+        if (showVideoPickerPrompt) {
+            VideoSelectionPromptDialog(
+                onDismiss = { showVideoPickerPrompt = false },
+                onVideoSelected = { uri ->
+                    viewModel.loadSelectedVideo(context, uri)
+                }
+            )
         }
 
         // Instagram Username Prompt Dialog

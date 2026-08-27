@@ -32,7 +32,10 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.data.model.ReelInsightsData
+import com.example.ui.components.FrameScrubVideoPreview
 import com.example.ui.components.IgIcons
 import com.example.ui.components.ImpactMetricRow
 import com.example.ui.components.InteractiveRetentionChart
@@ -300,49 +304,21 @@ fun OverviewTab(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Video Thumbnail Preview with Play Icon (9:16 Portrait Dimension)
+        var selectedRetentionIndex by remember(data.retention) { mutableIntStateOf(0) }
+        val activeRetentionPoint = data.retention.getOrNull(selectedRetentionIndex) ?: data.retention.firstOrNull()
+        val scrubTimeLabel = activeRetentionPoint?.timeLabel ?: "0:00"
+
+        // Video Thumbnail Preview with Play Icon (9:16 Portrait Dimension) & Frame-Synced Scrubbing
         Box(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .width(105.dp)
-                    .height(140.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(
-                        Brush.linearGradient(
-                            listOf(Color(0xFF2E1B4E), Color(0xFF1E1E24), Color(0xFF0F0F12))
-                        )
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                if (data.thumbnailUrl.isNotBlank()) {
-                    AsyncImage(
-                        model = data.thumbnailUrl,
-                        contentDescription = "Video Thumbnail",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .size(38.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.45f))
-                        .border(1.5.dp, Color.White, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "Play preview",
-                        tint = Color.White,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-            }
+            FrameScrubVideoPreview(
+                videoUri = data.videoUri,
+                thumbnailUrl = data.thumbnailUrl,
+                scrubSecond = selectedRetentionIndex,
+                timeLabel = scrubTimeLabel
+            )
         }
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -350,18 +326,24 @@ fun OverviewTab(
         if (loading) {
             ShimmerBox(height = 160.dp, borderRadius = 10.dp)
         } else {
-            InteractiveRetentionChart(retentionPoints = data.retention)
+            InteractiveRetentionChart(
+                retentionPoints = data.retention,
+                selectedIndex = selectedRetentionIndex,
+                onIndexChange = { newIndex ->
+                    selectedRetentionIndex = newIndex
+                }
+            )
         }
 
-        // Time limits: 0:00 to 0:08 (matching Screenshot 1)
+        // Dynamic time limits matching video duration (e.g. 0:00 to 0:08 or actual video duration)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 28.dp, end = 12.dp, top = 2.dp, bottom = 2.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = "0:00", fontSize = 12.sp, color = IgTextFaint)
-            Text(text = "0:08", fontSize = 12.sp, color = IgTextFaint)
+            Text(text = data.retention.firstOrNull()?.timeLabel ?: "0:00", fontSize = 12.sp, color = IgTextFaint)
+            Text(text = data.retention.lastOrNull()?.timeLabel ?: "0:08", fontSize = 12.sp, color = IgTextFaint)
         }
 
         Spacer(modifier = Modifier.height(30.dp))

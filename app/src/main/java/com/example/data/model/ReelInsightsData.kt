@@ -27,6 +27,8 @@ data class ReelInsightsData(
     val caption: String = "studio session, take 12 🎬",
     val handle: String = "your.page",
     val thumbnailUrl: String = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80",
+    val videoUri: String? = null,
+    val videoDurationMs: Long = 8000L,
     val likes: Int = 28,
     val comments: Int = 0,
     val reshares: Int = 1,

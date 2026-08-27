@@ -23,6 +23,10 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.data.model.ReelInsightsData
+import com.example.ui.components.FrameScrubVideoPreview
 import com.example.ui.components.InteractiveWhenLikedChart
 import com.example.ui.components.SectionHeader
 import com.example.ui.components.ShimmerBox
@@ -103,48 +108,20 @@ fun EngagementTab(
         SectionHeader(title = "When people liked your reel")
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Centered Video Thumbnail (9:16 Portrait Dimension)
+        var selectedLikeIndex by remember(data.whenLiked) { mutableIntStateOf(0) }
+        val likeTimeLabel = com.example.data.VideoMediaManager.formatTimeLabel(selectedLikeIndex)
+
+        // Centered Video Thumbnail (9:16 Portrait Dimension) & Frame-Synced Scrubbing
         Box(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .width(105.dp)
-                    .height(140.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(
-                        Brush.linearGradient(
-                            listOf(Color(0xFF38153A), Color(0xFF20162A), Color(0xFF0C0A10))
-                        )
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                if (data.thumbnailUrl.isNotBlank()) {
-                    AsyncImage(
-                        model = data.thumbnailUrl,
-                        contentDescription = "Reel Preview",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .size(38.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.45f))
-                        .border(1.5.dp, Color.White, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "Play",
-                        tint = Color.White,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-            }
+            FrameScrubVideoPreview(
+                videoUri = data.videoUri,
+                thumbnailUrl = data.thumbnailUrl,
+                scrubSecond = selectedLikeIndex,
+                timeLabel = likeTimeLabel
+            )
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -152,7 +129,13 @@ fun EngagementTab(
         if (loading) {
             ShimmerBox(height = 150.dp, borderRadius = 10.dp)
         } else {
-            InteractiveWhenLikedChart(likePoints = data.whenLiked)
+            InteractiveWhenLikedChart(
+                likePoints = data.whenLiked,
+                selectedIndex = selectedLikeIndex,
+                onIndexChange = { newIndex ->
+                    selectedLikeIndex = newIndex
+                }
+            )
         }
 
         Row(
@@ -162,7 +145,11 @@ fun EngagementTab(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(text = "0:00", fontSize = 12.sp, color = IgTextFaint)
-            Text(text = "0:11", fontSize = 12.sp, color = IgTextFaint)
+            Text(
+                text = com.example.data.VideoMediaManager.formatTimeLabel((data.whenLiked.size - 1).coerceAtLeast(1)),
+                fontSize = 12.sp,
+                color = IgTextFaint
+            )
         }
 
         // Spacing-only separation

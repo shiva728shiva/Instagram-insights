@@ -33,10 +33,10 @@ import com.example.ui.theme.IgTooltipBg
 @Composable
 fun InteractiveWhenLikedChart(
     likePoints: List<Float>,
+    selectedIndex: Int = 0,
+    onIndexChange: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var selectedIndex by remember { mutableIntStateOf(-1) }
-
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -54,7 +54,7 @@ fun InteractiveWhenLikedChart(
                         val relX = (offset.x - leftPadding).coerceIn(0f, chartWidth)
                         val step = chartWidth / (likePoints.size - 1).coerceAtLeast(1)
                         val index = (relX / step).toInt().coerceIn(0, likePoints.size - 1)
-                        selectedIndex = index
+                        onIndexChange(index)
                     }
                 }
                 .pointerInput(likePoints) {
@@ -66,7 +66,7 @@ fun InteractiveWhenLikedChart(
                         val relX = (change.position.x - leftPadding).coerceIn(0f, chartWidth)
                         val step = chartWidth / (likePoints.size - 1).coerceAtLeast(1)
                         val index = (relX / step).toInt().coerceIn(0, likePoints.size - 1)
-                        selectedIndex = index
+                        onIndexChange(index)
                     }
                 }
         ) {

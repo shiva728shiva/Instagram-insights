@@ -34,11 +34,10 @@ import com.example.ui.theme.IgTooltipBg
 @Composable
 fun InteractiveRetentionChart(
     retentionPoints: List<RetentionPoint>,
+    selectedIndex: Int = 0,
+    onIndexChange: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    // Default to index 0 so the "100% · 0:00" tooltip is always visible on load
-    var selectedIndex by remember(retentionPoints) { mutableIntStateOf(0) }
-
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -56,7 +55,7 @@ fun InteractiveRetentionChart(
                         val relX = (offset.x - leftPadding).coerceIn(0f, chartWidth)
                         val step = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
                         val index = (relX / step).toInt().coerceIn(0, retentionPoints.size - 1)
-                        selectedIndex = index
+                        onIndexChange(index)
                     }
                 }
                 .pointerInput(retentionPoints) {
@@ -68,7 +67,7 @@ fun InteractiveRetentionChart(
                         val relX = (change.position.x - leftPadding).coerceIn(0f, chartWidth)
                         val step = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
                         val index = (relX / step).toInt().coerceIn(0, retentionPoints.size - 1)
-                        selectedIndex = index
+                        onIndexChange(index)
                     }
                 }
         ) {

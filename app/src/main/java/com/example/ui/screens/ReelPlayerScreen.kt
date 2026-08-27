@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import android.net.Uri
+import android.widget.VideoView
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -41,6 +43,7 @@ import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -48,6 +51,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -65,6 +69,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
 import com.example.data.model.ReelItem
 import com.example.ui.theme.IgPinkAccent
@@ -76,12 +81,15 @@ fun ReelPlayerScreen(
     onBackToProfile: () -> Unit,
     onOpenInsights: () -> Unit,
     onOpenEditor: () -> Unit,
+    onSelectVideoClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var isPlaying by remember { mutableStateOf(true) }
     var isLiked by remember { mutableStateOf(false) }
     var likesCount by remember(reel) { mutableIntStateOf(reel.likesCount) }
     var isSaved by remember { mutableStateOf(false) }
+    var videoViewRef by remember { mutableStateOf<VideoView?>(null) }
+    val isLocalVideo = !reel.insightsData.videoUri.isNullOrBlank() && reel.insightsData.videoUri?.startsWith("content://") == true
 
     // Subtle gentle zoom animation to give live dynamic video effect
     val infiniteTransition = rememberInfiniteTransition(label = "videoMotion")
@@ -128,12 +136,25 @@ fun ReelPlayerScreen(
                 color = Color.White
             )
 
-            IconButton(onClick = onOpenEditor) {
-                Icon(
-                    imageVector = Icons.Default.PhotoCamera,
-                    contentDescription = "Camera",
-                    tint = Color.White
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = onSelectVideoClick,
+                    modifier = Modifier.testTag("select_video_in_player_btn")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.VideoLibrary,
+                        contentDescription = "Select Video",
+                        tint = Color.White
+                    )
+                }
+
+                IconButton(onClick = onOpenEditor) {
+                    Icon(
+                        imageVector = Icons.Default.PhotoCamera,
+                        contentDescription = "Camera / Edit",
+                        tint = Color.White
+                    )
+                }
             }
         }
 
@@ -148,20 +169,51 @@ fun ReelPlayerScreen(
                     }
                 }
         ) {
-            // Video Cover / Dynamic Player Canvas
-            AsyncImage(
-                model = reel.thumbnailUrl,
-                contentDescription = "Reel video playback",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer {
-                        if (isPlaying) {
-                            scaleX = scale
-                            scaleY = scale
+            if (isLocalVideo) {
+                // Real Video Playback for selected local video
+                AndroidView(
+                    factory = { ctx ->
+                        VideoView(ctx).apply {
+                            setVideoURI(Uri.parse(reel.insightsData.videoUri))
+                            setOnPreparedListener { mp ->
+                                mp.isLooping = true
+                                mp.setVolume(1f, 1f)
+                                if (isPlaying) start()
+                            }
+                            videoViewRef = this
                         }
+                    },
+                    update = { view ->
+                        if (isPlaying) {
+                            if (!view.isPlaying) view.start()
+                        } else {
+                            if (view.isPlaying) view.pause()
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                DisposableEffect(Unit) {
+                    onDispose {
+                        videoViewRef?.stopPlayback()
                     }
-            )
+                }
+            } else {
+                // Video Cover / Dynamic Player Canvas
+                AsyncImage(
+                    model = reel.thumbnailUrl,
+                    contentDescription = "Reel video playback",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            if (isPlaying) {
+                                scaleX = scale
+                                scaleY = scale
+                            }
+                        }
+                )
+            }
 
             // Top overlay text (Matching "Bellamy and Camilla talked for almost 2 HOURS?! 😳")
             if (reel.topOverlayText.isNotBlank()) {

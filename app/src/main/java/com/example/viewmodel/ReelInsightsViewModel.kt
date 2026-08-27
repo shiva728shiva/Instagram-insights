@@ -182,4 +182,34 @@ class ReelInsightsViewModel : ViewModel() {
         val defaultReel = _userProfile.value.reels.getOrElse(1) { _userProfile.value.reels.first() }
         _data.value = defaultReel.insightsData
     }
+
+    fun loadSelectedVideo(context: android.content.Context, uri: android.net.Uri) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val videoInfo = com.example.data.VideoMediaManager.extractVideoInfo(context, uri)
+                val newReel = com.example.data.VideoMediaManager.buildReelItemFromVideo(
+                    videoInfo = videoInfo,
+                    username = _userProfile.value.username
+                )
+
+                // Add to user profile reels at top
+                _userProfile.update { current ->
+                    val updatedReels = listOf(newReel) + current.reels
+                    current.copy(
+                        reels = updatedReels,
+                        postsCount = current.postsCount + 1
+                    )
+                }
+
+                _activeReel.value = newReel
+                _data.value = newReel.insightsData
+                _currentScreen.value = AppScreen.REEL_INSIGHTS
+            } catch (e: Exception) {
+                android.util.Log.e("ReelInsightsViewModel", "Error loading selected video: ${e.message}", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 }
