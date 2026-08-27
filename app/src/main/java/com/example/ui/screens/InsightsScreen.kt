@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.ReelInsightsData
 import com.example.ui.theme.IgBackground
 import com.example.ui.theme.IgBorder
+import com.example.ui.theme.IgDivider
 import com.example.ui.theme.IgTextMuted
 import com.example.ui.theme.IgTextPrimary
 import com.example.ui.theme.IgTextSecondary
@@ -139,7 +140,7 @@ fun InsightsScreen(
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
-            // Mini Reel Thumbnail Preview Box
+            // Mini Reel Thumbnail Preview Box (Clean Portrait Aspect Ratio with Rounded Corners)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -148,41 +149,23 @@ fun InsightsScreen(
             ) {
                 Box(
                     modifier = Modifier
-                        .width(118.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color.White)
-                ) {
-                    Column {
-                        Text(
-                            text = data.caption,
-                            fontSize = 8.5.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color(0xFF111111),
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            lineHeight = 11.sp,
-                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 6.dp)
+                        .width(112.dp)
+                        .height(84.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color(0xFF381A40), Color(0xFF22162E), Color(0xFF14111C))
+                            )
                         )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(96.dp)
-                                .background(
-                                    Brush.linearGradient(
-                                        listOf(Color(0xFF321A3B), Color(0xFF1F1A2A), Color(0xFF121214))
-                                    )
-                                )
-                        )
-                    }
-                }
+                )
             }
 
             // Quick Stats Icon Row (Likes, Comments, Reshares, Sends, Saves)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.SpaceAround
+                    .padding(horizontal = 20.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 QuickStatItem(icon = Icons.Outlined.FavoriteBorder, count = data.likes.toString())
                 QuickStatItem(icon = Icons.Outlined.ChatBubbleOutline, count = data.comments.toString())
@@ -191,58 +174,45 @@ fun InsightsScreen(
                 QuickStatItem(icon = Icons.Outlined.BookmarkBorder, count = data.saves.toString())
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Tab Bar Row (Overview, Engagement, Audience)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp)
-            ) {
-                InsightsTab.entries.forEach { tab ->
-                    val isSelected = currentTab == tab
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = { onTabSelect(tab) }
-                            )
-                            .padding(vertical = 12.dp)
-                            .testTag("tab_${tab.name.lowercase()}"),
-                        contentAlignment = Alignment.Center
-                    ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    InsightsTab.entries.forEach { tab ->
+                        val isSelected = currentTab == tab
                         Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = { onTabSelect(tab) }
+                                )
+                                .testTag("tab_${tab.name.lowercase()}"),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
                                 text = tab.label,
                                 fontSize = 14.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) Color.White else IgTextMuted
+                                color = if (isSelected) Color.White else IgTextMuted,
+                                modifier = Modifier.padding(vertical = 12.dp)
+                            )
+                            // White active tab underline
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(2.dp)
+                                    .background(if (isSelected) Color.White else Color.Transparent)
                             )
                         }
                     }
                 }
-            }
-
-            // Active Tab Indicator Line
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(2.dp)
-                    .background(IgBorder)
-            ) {
-                val tabIndex = currentTab.ordinal
-                val totalTabs = InsightsTab.entries.size
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(1f / totalTabs)
-                        .padding(start = (tabIndex * (360 / totalTabs)).dp) // visual indicator alignment
-                        .height(2.dp)
-                        .background(Color.White)
-                )
+                // Subtle gray divider line below tabs
+                HorizontalDivider(color = IgDivider, thickness = 1.dp)
             }
 
             Spacer(modifier = Modifier.height(18.dp))

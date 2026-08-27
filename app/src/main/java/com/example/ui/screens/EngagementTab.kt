@@ -58,10 +58,9 @@ fun EngagementTab(
     ) {
         // 1. Actions after viewing (Comes FIRST)
         SectionHeader(title = "Actions after viewing")
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
-        EngagementMetricItem(
-            icon = Icons.Outlined.PersonAdd,
+        EngagementTextRow(
             label = "Follows",
             count = data.follows,
             loading = loading
@@ -73,34 +72,29 @@ fun EngagementTab(
 
         // 2. Interactions section (Comes SECOND)
         SectionHeader(title = "Interactions")
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
-        EngagementMetricItem(
-            icon = Icons.Outlined.FavoriteBorder,
+        EngagementTextRow(
             label = "Likes",
             count = data.likes,
             loading = loading
         )
-        EngagementMetricItem(
-            icon = Icons.Outlined.ChatBubbleOutline,
+        EngagementTextRow(
             label = "Comments",
             count = data.comments,
             loading = loading
         )
-        EngagementMetricItem(
-            icon = Icons.Default.Repeat,
+        EngagementTextRow(
             label = "Reposts",
             count = data.reshares,
             loading = loading
         )
-        EngagementMetricItem(
-            icon = Icons.AutoMirrored.Filled.Send,
+        EngagementTextRow(
             label = "Shares",
             count = data.sends,
             loading = loading
         )
-        EngagementMetricItem(
-            icon = Icons.Outlined.BookmarkBorder,
+        EngagementTextRow(
             label = "Saves",
             count = data.saves,
             loading = loading
@@ -122,7 +116,7 @@ fun EngagementTab(
             Box(
                 modifier = Modifier
                     .size(94.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(8.dp))
                     .background(
                         Brush.linearGradient(
                             listOf(Color(0xFF38153A), Color(0xFF20162A), Color(0xFF0C0A10))
@@ -169,8 +163,7 @@ fun EngagementTab(
 }
 
 @Composable
-fun EngagementMetricItem(
-    icon: ImageVector,
+fun EngagementTextRow(
     label: String,
     count: Int,
     loading: Boolean,
@@ -179,41 +172,24 @@ fun EngagementMetricItem(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp),
+            .padding(vertical = 11.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(IgCardBg),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = IgTextPrimary,
-                modifier = Modifier.size(18.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.width(14.dp))
-
         Text(
             text = label,
             fontSize = 14.5.sp,
-            fontWeight = FontWeight.Medium,
-            color = IgTextPrimary,
-            modifier = Modifier.weight(1f)
+            fontWeight = FontWeight.Normal,
+            color = IgTextPrimary
         )
 
         if (loading) {
-            ShimmerBox(width = 30.dp, height = 16.dp)
+            ShimmerBox(width = 24.dp, height = 16.dp)
         } else {
             Text(
                 text = count.toString(),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = 14.5.sp,
+                fontWeight = FontWeight.Normal,
                 color = IgTextPrimary
             )
         }

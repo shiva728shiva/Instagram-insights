@@ -24,9 +24,9 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun rememberShimmerBrush(
     shimmerColors: List<Color> = listOf(
-        Color(0xFF141416),
-        Color(0xFF28282C),
-        Color(0xFF141416)
+        Color(0xFF1E1E22),
+        Color(0xFF323238),
+        Color(0xFF1E1E22)
     ),
     durationMillis: Int = 1100
 ): Brush {
