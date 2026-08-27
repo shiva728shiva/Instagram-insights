@@ -19,7 +19,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ui.screens.EditorBottomSheet
 import com.example.ui.screens.InsightsScreen
+import com.example.ui.screens.ProfileScreen
 import com.example.ui.screens.ReelPlayerScreen
+import com.example.ui.screens.UsernamePromptDialog
 import com.example.ui.theme.IgBackground
 import com.example.ui.theme.MyApplicationTheme
 import com.example.viewmodel.AppScreen
@@ -42,6 +44,8 @@ class MainActivity : ComponentActivity() {
 fun ReelInsightsApp(
     viewModel: ReelInsightsViewModel = viewModel()
 ) {
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
+    val activeReel by viewModel.activeReel.collectAsStateWithLifecycle()
     val data by viewModel.data.collectAsStateWithLifecycle()
     val currentScreen by viewModel.currentScreen.collectAsStateWithLifecycle()
     val currentTab by viewModel.currentTab.collectAsStateWithLifecycle()
@@ -49,6 +53,7 @@ fun ReelInsightsApp(
     val viewsFilter by viewModel.viewsFilter.collectAsStateWithLifecycle()
     val audienceSubTab by viewModel.audienceSubTab.collectAsStateWithLifecycle()
     val isEditorOpen by viewModel.isEditorOpen.collectAsStateWithLifecycle()
+    val showUsernamePrompt by viewModel.showUsernamePrompt.collectAsStateWithLifecycle()
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -62,6 +67,27 @@ fun ReelInsightsApp(
             label = "screenTransition"
         ) { screen ->
             when (screen) {
+                AppScreen.PROFILE -> {
+                    ProfileScreen(
+                        profile = userProfile,
+                        onSelectReel = { reel ->
+                            viewModel.selectReel(reel)
+                        },
+                        onChangeUsernameClick = {
+                            viewModel.setShowUsernamePrompt(true)
+                        }
+                    )
+                }
+
+                AppScreen.REEL_FEED -> {
+                    ReelPlayerScreen(
+                        reel = activeReel,
+                        onBackToProfile = { viewModel.navigateTo(AppScreen.PROFILE) },
+                        onOpenInsights = { viewModel.navigateTo(AppScreen.REEL_INSIGHTS) },
+                        onOpenEditor = { viewModel.setEditorOpen(true) }
+                    )
+                }
+
                 AppScreen.REEL_INSIGHTS -> {
                     InsightsScreen(
                         data = data,
@@ -76,15 +102,18 @@ fun ReelInsightsApp(
                         onOpenEditor = { viewModel.setEditorOpen(true) }
                     )
                 }
-
-                AppScreen.REEL_FEED -> {
-                    ReelPlayerScreen(
-                        data = data,
-                        onOpenInsights = { viewModel.navigateTo(AppScreen.REEL_INSIGHTS) },
-                        onOpenEditor = { viewModel.setEditorOpen(true) }
-                    )
-                }
             }
+        }
+
+        // Instagram Username Prompt Dialog
+        if (showUsernamePrompt) {
+            UsernamePromptDialog(
+                initialUsername = userProfile.username,
+                onDismiss = { viewModel.setShowUsernamePrompt(false) },
+                onSubmit = { username ->
+                    viewModel.loadUsername(username)
+                }
+            )
         }
 
         // Live metrics customizer

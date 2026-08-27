@@ -353,15 +353,15 @@ fun OverviewTab(
             InteractiveRetentionChart(retentionPoints = data.retention)
         }
 
-        // Time limits: 0:00 to 0:11
+        // Time limits: 0:00 to 0:08 (matching Screenshot 1)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 2.dp),
+                .padding(start = 28.dp, end = 12.dp, top = 2.dp, bottom = 2.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(text = "0:00", fontSize = 12.sp, color = IgTextFaint)
-            Text(text = "0:11", fontSize = 12.sp, color = IgTextFaint)
+            Text(text = "0:08", fontSize = 12.sp, color = IgTextFaint)
         }
 
         Spacer(modifier = Modifier.height(30.dp))

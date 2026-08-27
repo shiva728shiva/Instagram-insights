@@ -36,7 +36,8 @@ fun InteractiveRetentionChart(
     retentionPoints: List<RetentionPoint>,
     modifier: Modifier = Modifier
 ) {
-    var selectedIndex by remember { mutableIntStateOf(-1) }
+    // Default to index 0 so the "100% · 0:00" tooltip is always visible on load
+    var selectedIndex by remember(retentionPoints) { mutableIntStateOf(0) }
 
     Box(
         modifier = modifier
@@ -49,8 +50,8 @@ fun InteractiveRetentionChart(
                 .fillMaxSize()
                 .pointerInput(retentionPoints) {
                     detectTapGestures { offset ->
-                        val leftPadding = 40f
-                        val rightPadding = 40f
+                        val leftPadding = 75f
+                        val rightPadding = 20f
                         val chartWidth = size.width - leftPadding - rightPadding
                         val relX = (offset.x - leftPadding).coerceIn(0f, chartWidth)
                         val step = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
@@ -61,8 +62,8 @@ fun InteractiveRetentionChart(
                 .pointerInput(retentionPoints) {
                     detectDragGestures { change, _ ->
                         change.consume()
-                        val leftPadding = 40f
-                        val rightPadding = 40f
+                        val leftPadding = 75f
+                        val rightPadding = 20f
                         val chartWidth = size.width - leftPadding - rightPadding
                         val relX = (change.position.x - leftPadding).coerceIn(0f, chartWidth)
                         val step = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
@@ -74,21 +75,40 @@ fun InteractiveRetentionChart(
             val width = size.width
             val height = size.height
 
-            val leftPadding = 40f
-            val rightPadding = 40f
-            val topPadding = 50f
+            val leftPadding = 75f // Space for 100%, 50%, 0% text on left
+            val rightPadding = 20f
+            val topPadding = 45f
             val bottomPadding = 30f
 
             val chartWidth = width - leftPadding - rightPadding
             val chartHeight = height - topPadding - bottomPadding
 
-            // 1. Horizontal grid lines (100%, 50%, 0%)
-            listOf(0f, 0.5f, 1f).forEach { frac ->
-                val yPos = topPadding + frac * chartHeight
+            val textPaint = android.graphics.Paint().apply {
+                color = android.graphics.Color.parseColor("#999999")
+                textSize = 28f
+                isAntiAlias = true
+                textAlign = android.graphics.Paint.Align.LEFT
+            }
+
+            // 1. Horizontal grid lines & Y-axis percentage labels (100%, 50%, 0%)
+            listOf(
+                Triple(0f, "100%", topPadding),
+                Triple(0.5f, "50%", topPadding + 0.5f * chartHeight),
+                Triple(1f, "0%", topPadding + chartHeight)
+            ).forEach { (_, label, yPos) ->
+                // Draw Label on the left
+                drawContext.canvas.nativeCanvas.drawText(
+                    label,
+                    4f,
+                    yPos + 8f,
+                    textPaint
+                )
+
+                // Draw Gridline
                 drawLine(
                     color = IgChartGrid,
-                    start = Offset(leftPadding - 10f, yPos),
-                    end = Offset(width - rightPadding + 10f, yPos),
+                    start = Offset(leftPadding, yPos),
+                    end = Offset(width - rightPadding, yPos),
                     strokeWidth = 1.2.dp.toPx()
                 )
             }

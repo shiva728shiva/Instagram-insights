@@ -2,8 +2,11 @@ package com.example.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.ProfileRepository
 import com.example.data.model.MetricQualifier
 import com.example.data.model.ReelInsightsData
+import com.example.data.model.ReelItem
+import com.example.data.model.UserProfile
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,16 +21,26 @@ enum class InsightsTab(val label: String) {
 }
 
 enum class AppScreen {
+    PROFILE,
     REEL_FEED,
     REEL_INSIGHTS
 }
 
 class ReelInsightsViewModel : ViewModel() {
 
-    private val _data = MutableStateFlow(ReelInsightsData())
+    private val initialProfile = ProfileRepository.getProfileForUsername("alishaasassy")
+
+    private val _userProfile = MutableStateFlow(initialProfile)
+    val userProfile: StateFlow<UserProfile> = _userProfile.asStateFlow()
+
+    private val _activeReel = MutableStateFlow(initialProfile.reels.getOrElse(1) { initialProfile.reels.first() })
+    val activeReel: StateFlow<ReelItem> = _activeReel.asStateFlow()
+
+    private val _data = MutableStateFlow(initialProfile.reels.getOrElse(1) { initialProfile.reels.first() }.insightsData)
     val data: StateFlow<ReelInsightsData> = _data.asStateFlow()
 
-    private val _currentScreen = MutableStateFlow(AppScreen.REEL_INSIGHTS)
+    // Start on Profile Screen as requested
+    private val _currentScreen = MutableStateFlow(AppScreen.PROFILE)
     val currentScreen: StateFlow<AppScreen> = _currentScreen.asStateFlow()
 
     private val _currentTab = MutableStateFlow(InsightsTab.OVERVIEW)
@@ -45,16 +58,53 @@ class ReelInsightsViewModel : ViewModel() {
     private val _isEditorOpen = MutableStateFlow(false)
     val isEditorOpen: StateFlow<Boolean> = _isEditorOpen.asStateFlow()
 
+    private val _showUsernamePrompt = MutableStateFlow(false)
+    val showUsernamePrompt: StateFlow<Boolean> = _showUsernamePrompt.asStateFlow()
+
+    init {
+        // Auto-fetch real Instagram Graph API data on launch
+        loadUsername("alishaasassy")
+    }
+
+    fun loadUsername(username: String) {
+        val base = ProfileRepository.getProfileForUsername(username)
+        _userProfile.value = base
+        val defaultReel = base.reels.getOrElse(1) { base.reels.first() }
+        _activeReel.value = defaultReel
+        _data.value = defaultReel.insightsData
+        _showUsernamePrompt.value = false
+
+        viewModelScope.launch {
+            _isLoading.value = true
+            val realProfile = ProfileRepository.fetchProfileWithRealApi(username)
+            _userProfile.value = realProfile
+            val active = realProfile.reels.getOrElse(1) { realProfile.reels.firstOrNull() ?: defaultReel }
+            _activeReel.value = active
+            _data.value = active.insightsData
+            _isLoading.value = false
+        }
+    }
+
+    fun selectReel(reel: ReelItem) {
+        _activeReel.value = reel
+        _data.value = reel.insightsData
+        _currentScreen.value = AppScreen.REEL_FEED
+    }
+
+    fun setShowUsernamePrompt(show: Boolean) {
+        _showUsernamePrompt.value = show
+    }
+
     fun navigateTo(screen: AppScreen) {
         _currentScreen.value = screen
         if (screen == AppScreen.REEL_INSIGHTS) {
-            triggerLoading(800)
+            triggerLoading(600)
         }
     }
 
     fun selectTab(tab: InsightsTab) {
         _currentTab.value = tab
-        triggerLoading(500)
+        triggerLoading(400)
     }
 
     fun setViewsFilter(filter: String) {
@@ -69,7 +119,7 @@ class ReelInsightsViewModel : ViewModel() {
         _isEditorOpen.value = open
     }
 
-    fun triggerLoading(durationMillis: Long = 700) {
+    fun triggerLoading(durationMillis: Long = 600) {
         viewModelScope.launch {
             _isLoading.value = true
             delay(durationMillis)
@@ -100,7 +150,7 @@ class ReelInsightsViewModel : ViewModel() {
         commentRate: Float? = null
     ) {
         _data.update { current ->
-            current.copy(
+            val updated = current.copy(
                 caption = caption ?: current.caption,
                 handle = handle ?: current.handle,
                 thumbnailUrl = thumbnailUrl ?: current.thumbnailUrl,
@@ -122,10 +172,14 @@ class ReelInsightsViewModel : ViewModel() {
                 repostRate = repostRate ?: current.repostRate,
                 commentRate = commentRate ?: current.commentRate
             )
+            // Sync active reel
+            _activeReel.update { it.copy(insightsData = updated, viewsCount = updated.views, likesCount = updated.likes) }
+            updated
         }
     }
 
     fun resetToDefaults() {
-        _data.value = ReelInsightsData()
+        val defaultReel = _userProfile.value.reels.getOrElse(1) { _userProfile.value.reels.first() }
+        _data.value = defaultReel.insightsData
     }
 }

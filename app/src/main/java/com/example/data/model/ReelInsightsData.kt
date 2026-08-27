@@ -69,20 +69,17 @@ data class ReelInsightsData(
         ViewDataPoint("Aug 28", -1f, 0f)
     ),
 
-    // Retention curve (How long people watched)
+    // Retention curve (How long people watched - matching screenshot)
     val retention: List<RetentionPoint> = listOf(
         RetentionPoint("0:00", 100f),
-        RetentionPoint("0:01", 97f),
-        RetentionPoint("0:02", 92f),
-        RetentionPoint("0:03", 88f),
-        RetentionPoint("0:04", 24f),
-        RetentionPoint("0:05", 20f),
+        RetentionPoint("0:01", 98f),
+        RetentionPoint("0:02", 96f),
+        RetentionPoint("0:03", 94f),
+        RetentionPoint("0:04", 90f),
+        RetentionPoint("0:05", 28f),
         RetentionPoint("0:06", 18f),
         RetentionPoint("0:07", 16f),
-        RetentionPoint("0:08", 15f),
-        RetentionPoint("0:09", 13f),
-        RetentionPoint("0:10", 11f),
-        RetentionPoint("0:11", 8f)
+        RetentionPoint("0:08", 15f)
     ),
 
     // When people liked your reel
@@ -90,11 +87,11 @@ data class ReelInsightsData(
         15f, 85f, 95f, 100f, 100f, 70f, 100f, 90f, 60f, 40f, 20f, 10f
     ),
 
-    // Top sources of views
-    val reelsTabPct: Float = 27.2f,
-    val explorePct: Float = 4.4f,
-    val profilePct: Float = 0.4f,
-    val feedPct: Float = 0.1f,
+    // Top sources of views (Matching Screenshot 1)
+    val reelsTabPct: Float = 22.1f,
+    val explorePct: Float = 3.4f,
+    val profilePct: Float = 0.8f,
+    val feedPct: Float = 0.0f,
 
     // Audience
     val followersAudiencePct: Float = 0.0f,
