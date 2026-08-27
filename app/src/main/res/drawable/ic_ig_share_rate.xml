@@ -3,17 +3,17 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- Instagram Direct / Share Paper Plane -->
+    <!-- Instagram Direct / Share Outline -->
     <path
-        android:pathData="M22,2.5 L2.5,10.8 C1.8,11.1 1.8,12.1 2.5,12.4 L9.8,15.2 L12.6,22.5 C12.9,23.2 13.9,23.2 14.2,22.5 L22.5,3 C22.8,2.3 22.7,2.2 22,2.5 Z"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="1.8"
+        android:pathData="M6.2,5.2 L17.8,5.2 C18.7,5.2 19.3,6.1 18.8,6.9 L12.6,19.8 C12.3,20.4 11.7,20.4 11.4,19.8 L5.2,6.9 C4.7,6.1 5.3,5.2 6.2,5.2 Z"
+        android:strokeColor="#F8F9FB"
+        android:strokeWidth="1.9"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"/>
     <path
-        android:pathData="M9.8,15.2 L16.5,8.5"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="1.8"
+        android:pathData="M12,19.5 L12,10.2"
+        android:strokeColor="#F8F9FB"
+        android:strokeWidth="1.9"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"/>
 </vector>
