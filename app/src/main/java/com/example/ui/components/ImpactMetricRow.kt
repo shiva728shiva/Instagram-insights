@@ -38,14 +38,14 @@ fun ImpactMetricRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp)
+            .padding(vertical = 11.dp)
             .testTag("impact_row_${label.lowercase().replace(" ", "_")}"),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Circular icon container
+        // Circular icon container (Matching Real Instagram 42dp)
         Box(
             modifier = Modifier
-                .size(36.dp)
+                .size(42.dp)
                 .clip(CircleShape)
                 .background(IgCardBg),
             contentAlignment = Alignment.Center
@@ -54,7 +54,7 @@ fun ImpactMetricRow(
                 imageVector = icon,
                 contentDescription = label,
                 tint = IgTextPrimary,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(22.dp)
             )
         }
 
@@ -63,7 +63,7 @@ fun ImpactMetricRow(
         // Metric Label
         Text(
             text = label,
-            fontSize = 14.5.sp,
+            fontSize = 15.5.sp,
             fontWeight = FontWeight.Medium,
             color = IgTextPrimary,
             modifier = Modifier.weight(1f)
@@ -71,21 +71,21 @@ fun ImpactMetricRow(
 
         // Percentage and Qualifier column on the right
         if (loading) {
-            ShimmerBox(width = 50.dp, height = 18.dp)
+            ShimmerBox(width = 54.dp, height = 20.dp)
         } else {
             Column(
                 horizontalAlignment = Alignment.End
             ) {
                 Text(
                     text = String.format("%.1f%%", value),
-                    fontSize = 14.5.sp,
+                    fontSize = 15.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = IgTextPrimary
                 )
                 Text(
                     text = qualifier.label,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
                     color = qualifier.color,
                     textAlign = TextAlign.End
                 )

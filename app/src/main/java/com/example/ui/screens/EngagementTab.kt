@@ -108,15 +108,16 @@ fun EngagementTab(
         SectionHeader(title = "When people liked your reel")
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Centered Video Thumbnail
+        // Centered Video Thumbnail (9:16 Portrait Dimension)
         Box(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
             Box(
                 modifier = Modifier
-                    .size(94.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .width(105.dp)
+                    .height(140.dp)
+                    .clip(RoundedCornerShape(10.dp))
                     .background(
                         Brush.linearGradient(
                             listOf(Color(0xFF38153A), Color(0xFF20162A), Color(0xFF0C0A10))
@@ -126,7 +127,7 @@ fun EngagementTab(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(34.dp)
+                        .size(38.dp)
                         .clip(CircleShape)
                         .background(Color.Black.copy(alpha = 0.45f))
                         .border(1.5.dp, Color.White, CircleShape),
@@ -136,7 +137,7 @@ fun EngagementTab(
                         imageVector = Icons.Default.PlayArrow,
                         contentDescription = "Play",
                         tint = Color.White,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
@@ -156,8 +157,8 @@ fun EngagementTab(
                 .padding(horizontal = 14.dp, vertical = 2.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = "0:00", fontSize = 11.sp, color = IgTextFaint)
-            Text(text = "0:11", fontSize = 11.sp, color = IgTextFaint)
+            Text(text = "0:00", fontSize = 12.sp, color = IgTextFaint)
+            Text(text = "0:11", fontSize = 12.sp, color = IgTextFaint)
         }
     }
 }
@@ -172,23 +173,23 @@ fun EngagementTextRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 11.dp),
+            .padding(vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = label,
-            fontSize = 14.5.sp,
+            fontSize = 15.5.sp,
             fontWeight = FontWeight.Normal,
             color = IgTextPrimary
         )
 
         if (loading) {
-            ShimmerBox(width = 24.dp, height = 16.dp)
+            ShimmerBox(width = 28.dp, height = 18.dp)
         } else {
             Text(
                 text = count.toString(),
-                fontSize = 14.5.sp,
+                fontSize = 15.5.sp,
                 fontWeight = FontWeight.Normal,
                 color = IgTextPrimary
             )

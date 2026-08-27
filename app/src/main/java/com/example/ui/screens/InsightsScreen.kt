@@ -97,13 +97,13 @@ fun InsightsScreen(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
                     tint = IgTextPrimary,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(26.dp)
                 )
             }
 
             Text(
                 text = "Reel insights",
-                fontSize = 17.5.sp,
+                fontSize = 18.5.sp,
                 fontWeight = FontWeight.Bold,
                 color = IgTextPrimary
             )
@@ -117,7 +117,7 @@ fun InsightsScreen(
                         imageVector = Icons.AutoMirrored.Outlined.TrendingUp,
                         contentDescription = "Customize Data",
                         tint = IgTextPrimary,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
                 IconButton(
@@ -128,7 +128,7 @@ fun InsightsScreen(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = "More Options",
                         tint = IgTextPrimary,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
@@ -140,7 +140,7 @@ fun InsightsScreen(
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
-            // Mini Reel Thumbnail Preview Box (Clean Portrait Aspect Ratio with Rounded Corners)
+            // Reel Thumbnail Preview Box (Matching Real Instagram 9:16 Portrait Dimension)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -149,9 +149,9 @@ fun InsightsScreen(
             ) {
                 Box(
                     modifier = Modifier
-                        .width(112.dp)
-                        .height(84.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .width(115.dp)
+                        .height(155.dp)
+                        .clip(RoundedCornerShape(10.dp))
                         .background(
                             Brush.verticalGradient(
                                 listOf(Color(0xFF381A40), Color(0xFF22162E), Color(0xFF14111C))
@@ -164,7 +164,7 @@ fun InsightsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 6.dp),
+                    .padding(horizontal = 24.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 QuickStatItem(icon = Icons.Outlined.FavoriteBorder, count = data.likes.toString())
@@ -196,7 +196,7 @@ fun InsightsScreen(
                         ) {
                             Text(
                                 text = tab.label,
-                                fontSize = 14.sp,
+                                fontSize = 15.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                 color = if (isSelected) Color.White else IgTextMuted,
                                 modifier = Modifier.padding(vertical = 12.dp)
@@ -266,12 +266,12 @@ fun QuickStatItem(
             imageVector = icon,
             contentDescription = null,
             tint = IgTextPrimary,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(24.dp)
         )
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = count,
-            fontSize = 12.sp,
+            fontSize = 13.5.sp,
             fontWeight = FontWeight.SemiBold,
             color = IgTextPrimary
         )

@@ -81,7 +81,7 @@ fun OverviewTab(
         // 1. Summary Section
         Text(
             text = "Summary",
-            fontSize = 16.sp,
+            fontSize = 16.5.sp,
             fontWeight = FontWeight.Bold,
             color = IgTextPrimary,
             modifier = Modifier.padding(bottom = 12.dp)
@@ -133,11 +133,11 @@ fun OverviewTab(
             title = "Views over time",
             rightContent = {
                 if (loading) {
-                    ShimmerBox(width = 50.dp, height = 16.dp)
+                    ShimmerBox(width = 54.dp, height = 18.dp)
                 } else {
                     RollingNumberCounter(
                         targetValue = data.views,
-                        fontSize = 15.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = IgTextPrimary
                     )
@@ -223,13 +223,13 @@ fun OverviewTab(
         // 3. What impacts your views Section
         Text(
             text = "What impacts your views",
-            fontSize = 16.sp,
+            fontSize = 16.5.sp,
             fontWeight = FontWeight.Bold,
             color = IgTextPrimary
         )
         Text(
             text = "Rates are listed in order of importance to reach.",
-            fontSize = 12.5.sp,
+            fontSize = 13.sp,
             color = IgTextSecondary,
             modifier = Modifier.padding(top = 3.dp, bottom = 8.dp)
         )
@@ -286,7 +286,7 @@ fun OverviewTab(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Video Thumbnail Preview with Play Icon
+        // Video Thumbnail Preview with Play Icon (9:16 Portrait Dimension)
         Box(
             modifier = Modifier
                 .fillMaxWidth(),
@@ -294,7 +294,8 @@ fun OverviewTab(
         ) {
             Box(
                 modifier = Modifier
-                    .size(94.dp)
+                    .width(105.dp)
+                    .height(140.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .background(
                         Brush.linearGradient(
@@ -305,7 +306,7 @@ fun OverviewTab(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(34.dp)
+                        .size(38.dp)
                         .clip(CircleShape)
                         .background(Color.Black.copy(alpha = 0.45f))
                         .border(1.5.dp, Color.White, CircleShape),
@@ -315,7 +316,7 @@ fun OverviewTab(
                         imageVector = Icons.Default.PlayArrow,
                         contentDescription = "Play preview",
                         tint = Color.White,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
@@ -336,8 +337,8 @@ fun OverviewTab(
                 .padding(horizontal = 14.dp, vertical = 2.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = "0:00", fontSize = 11.sp, color = IgTextFaint)
-            Text(text = "0:11", fontSize = 11.sp, color = IgTextFaint)
+            Text(text = "0:00", fontSize = 12.sp, color = IgTextFaint)
+            Text(text = "0:11", fontSize = 12.sp, color = IgTextFaint)
         }
 
         Spacer(modifier = Modifier.height(30.dp))
@@ -356,7 +357,7 @@ fun OverviewTab(
         // 6. Ad Section
         Text(
             text = "Ad",
-            fontSize = 13.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = IgTextPrimary,
             modifier = Modifier.padding(bottom = 12.dp)
@@ -366,7 +367,7 @@ fun OverviewTab(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { }
-                .padding(vertical = 4.dp),
+                .padding(vertical = 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -375,12 +376,12 @@ fun OverviewTab(
                     imageVector = Icons.AutoMirrored.Outlined.TrendingUp,
                     contentDescription = null,
                     tint = IgTextPrimary,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(22.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = "Boost this reel",
-                    fontSize = 14.5.sp,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
                     color = IgTextPrimary
                 )
@@ -389,7 +390,7 @@ fun OverviewTab(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
                 tint = IgTextMuted,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(22.dp)
             )
         }
     }
@@ -406,7 +407,7 @@ fun SummaryCard(
         val shimmerBrush = rememberShimmerBrush()
         Box(
             modifier = modifier
-                .clip(RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(14.dp))
                 .background(shimmerBrush)
                 .padding(horizontal = 14.dp, vertical = 14.dp)
         ) {
@@ -431,20 +432,20 @@ fun SummaryCard(
     } else {
         Box(
             modifier = modifier
-                .clip(RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(14.dp))
                 .background(IgCardBg)
-                .padding(horizontal = 14.dp, vertical = 12.dp)
+                .padding(horizontal = 16.dp, vertical = 14.dp)
         ) {
             Column {
                 Text(
                     text = label,
-                    fontSize = 12.5.sp,
+                    fontSize = 13.sp,
                     color = IgTextSecondary,
                     modifier = Modifier.padding(bottom = 6.dp)
                 )
                 Text(
                     text = value,
-                    fontSize = 20.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = IgTextPrimary
                 )
@@ -479,7 +480,7 @@ fun FilterPill(
     ) {
         Text(
             text = label,
-            fontSize = 12.5.sp,
+            fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
             color = if (isSelected) Color.White else IgTextSecondary
         )

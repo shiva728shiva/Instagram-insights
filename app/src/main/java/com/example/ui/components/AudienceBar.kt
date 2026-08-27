@@ -51,7 +51,7 @@ fun MetricProgressBar(
     ) {
         Text(
             text = label,
-            fontSize = 13.5.sp,
+            fontSize = 14.5.sp,
             fontWeight = FontWeight.Normal,
             color = IgTextPrimary,
             modifier = Modifier.padding(bottom = 6.dp)
@@ -60,14 +60,14 @@ fun MetricProgressBar(
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Track & Fill bar
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(3.dp))
+                    .height(7.dp)
+                    .clip(RoundedCornerShape(3.5.dp))
                     .background(IgBorder)
             ) {
                 if (!loading && animatedProgress > 0f) {
@@ -75,7 +75,7 @@ fun MetricProgressBar(
                         modifier = Modifier
                             .fillMaxWidth(animatedProgress)
                             .fillMaxHeight()
-                            .clip(RoundedCornerShape(3.dp))
+                            .clip(RoundedCornerShape(3.5.dp))
                             .background(barColor)
                     )
                 }
@@ -83,15 +83,15 @@ fun MetricProgressBar(
 
             // Percentage Text
             if (loading) {
-                ShimmerBox(width = 38.dp, height = 12.dp)
+                ShimmerBox(width = 42.dp, height = 14.dp)
             } else {
                 Text(
                     text = String.format("%.1f%%", percent),
-                    fontSize = 13.sp,
+                    fontSize = 14.5.sp,
                     fontWeight = FontWeight.Medium,
                     color = IgTextSecondary,
                     textAlign = TextAlign.End,
-                    modifier = Modifier.width(48.dp)
+                    modifier = Modifier.width(52.dp)
                 )
             }
         }

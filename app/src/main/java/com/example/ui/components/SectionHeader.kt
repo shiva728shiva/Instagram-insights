@@ -45,7 +45,7 @@ fun SectionHeader(
         ) {
             Text(
                 text = title,
-                fontSize = 16.sp,
+                fontSize = 16.5.sp,
                 fontWeight = FontWeight.Bold,
                 color = IgTextPrimary
             )
@@ -55,7 +55,7 @@ fun SectionHeader(
                     imageVector = Icons.Outlined.Info,
                     contentDescription = "Info",
                     tint = IgTextMuted,
-                    modifier = Modifier.size(15.dp)
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }
