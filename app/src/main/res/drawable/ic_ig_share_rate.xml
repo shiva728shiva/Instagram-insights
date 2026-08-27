@@ -3,17 +3,17 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- Instagram Direct / Share Outline -->
+    <!-- Instagram Direct / Paper Airplane Icon with softer rounded edges and thin stroke -->
     <path
-        android:pathData="M6.2,5.2 L17.8,5.2 C18.7,5.2 19.3,6.1 18.8,6.9 L12.6,19.8 C12.3,20.4 11.7,20.4 11.4,19.8 L5.2,6.9 C4.7,6.1 5.3,5.2 6.2,5.2 Z"
+        android:pathData="M7.2,5.5 C6.3,5.5 5.8,6.4 6.2,7.1 L11.4,18.8 C11.7,19.4 12.3,19.4 12.6,18.8 L17.8,7.1 C18.2,6.4 17.7,5.5 16.8,5.5 Z"
         android:strokeColor="#F8F9FB"
-        android:strokeWidth="1.9"
+        android:strokeWidth="1.4"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"/>
     <path
-        android:pathData="M12,19.5 L12,10.2"
+        android:pathData="M12,18.5 L12,10.0"
         android:strokeColor="#F8F9FB"
-        android:strokeWidth="1.9"
+        android:strokeWidth="1.4"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"/>
 </vector>

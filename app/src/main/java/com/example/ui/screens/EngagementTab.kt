@@ -2,11 +2,13 @@ package com.example.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -15,14 +17,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material.icons.outlined.BookmarkBorder
-import androidx.compose.material.icons.outlined.ChatBubbleOutline
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.PersonAdd
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,17 +28,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.data.model.ReelInsightsData
 import com.example.ui.components.InteractiveWhenLikedChart
 import com.example.ui.components.SectionHeader
 import com.example.ui.components.ShimmerBox
-import com.example.ui.theme.IgCardBg
-import com.example.ui.theme.IgDivider
 import com.example.ui.theme.IgTextFaint
+import com.example.ui.theme.IgTextMuted
 import com.example.ui.theme.IgTextPrimary
 
 @Composable
@@ -66,9 +63,8 @@ fun EngagementTab(
             loading = loading
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
-        HorizontalDivider(color = IgDivider, thickness = 1.dp)
-        Spacer(modifier = Modifier.height(20.dp))
+        // Spacing-only separation without divider lines
+        Spacer(modifier = Modifier.height(28.dp))
 
         // 2. Interactions section (Comes SECOND)
         SectionHeader(title = "Interactions")
@@ -100,9 +96,8 @@ fun EngagementTab(
             loading = loading
         )
 
+        // Spacing-only separation without divider lines
         Spacer(modifier = Modifier.height(28.dp))
-        HorizontalDivider(color = IgDivider, thickness = 1.dp)
-        Spacer(modifier = Modifier.height(24.dp))
 
         // 3. When people liked your reel (Comes THIRD with thumbnail and pink line chart)
         SectionHeader(title = "When people liked your reel")
@@ -125,6 +120,15 @@ fun EngagementTab(
                     ),
                 contentAlignment = Alignment.Center
             ) {
+                if (data.thumbnailUrl.isNotBlank()) {
+                    AsyncImage(
+                        model = data.thumbnailUrl,
+                        contentDescription = "Reel Preview",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
                 Box(
                     modifier = Modifier
                         .size(38.dp)
@@ -159,6 +163,49 @@ fun EngagementTab(
         ) {
             Text(text = "0:00", fontSize = 12.sp, color = IgTextFaint)
             Text(text = "0:11", fontSize = 12.sp, color = IgTextFaint)
+        }
+
+        // Spacing-only separation
+        Spacer(modifier = Modifier.height(28.dp))
+
+        // 4. Ad Section -> Boost this reel
+        Text(
+            text = "Ad",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = IgTextPrimary,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { }
+                .padding(vertical = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.TrendingUp,
+                    contentDescription = null,
+                    tint = IgTextPrimary,
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Boost this reel",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = IgTextPrimary
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = IgTextMuted,
+                modifier = Modifier.size(22.dp)
+            )
         }
     }
 }

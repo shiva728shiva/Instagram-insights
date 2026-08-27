@@ -35,7 +35,7 @@ fun InteractiveWhenLikedChart(
     likePoints: List<Float>,
     modifier: Modifier = Modifier
 ) {
-    var selectedIndex by remember { mutableIntStateOf(3.coerceAtMost(likePoints.size - 1)) }
+    var selectedIndex by remember { mutableIntStateOf(-1) }
 
     Box(
         modifier = modifier

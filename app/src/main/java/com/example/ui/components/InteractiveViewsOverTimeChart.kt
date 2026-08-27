@@ -45,16 +45,15 @@ fun InteractiveViewsOverTimeChart(
     selectedFilter: String = "All",
     modifier: Modifier = Modifier
 ) {
-    // Default selected index pointing to Aug 24 (index 7)
+    // By default, tooltip is hidden until user taps/drags on chart
     val maxValidIndex = remember(dataPoints) {
         val lastValid = dataPoints.indexOfLast { it.viewsThisReel >= 0f }
         if (lastValid >= 0) lastValid else (dataPoints.size - 1)
     }
     var selectedIndex by remember(dataPoints) {
-        val aug18Index = dataPoints.indexOfFirst { it.dateLabel == "Aug 18" }
-        mutableIntStateOf(if (aug18Index >= 0) aug18Index else 1.coerceAtMost(maxValidIndex))
+        mutableIntStateOf(-1)
     }
-    var isTouching by remember { mutableStateOf(true) }
+    var isTouching by remember { mutableStateOf(false) }
 
     // Multiplier for filter (All: 1.0, Followers: 0.08, Non-followers: 0.92)
     val factor = when (selectedFilter) {
@@ -210,8 +209,8 @@ fun InteractiveViewsOverTimeChart(
                 )
             )
 
-            // 4. Draw Interactive Scrubber / Pointer Tooltip if active
-            if (selectedIndex in 0..maxValidIndex && dataPoints[selectedIndex].viewsThisReel >= 0f) {
+            // 4. Draw Interactive Scrubber / Pointer Tooltip if user touched/scrubbed
+            if (isTouching && selectedIndex in 0..maxValidIndex && dataPoints[selectedIndex].viewsThisReel >= 0f) {
                 val activePoint = dataPoints[selectedIndex]
                 val coords = getCoordinates(selectedIndex, activePoint.viewsThisReel)
 

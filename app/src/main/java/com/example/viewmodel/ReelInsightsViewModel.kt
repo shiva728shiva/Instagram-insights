@@ -80,6 +80,7 @@ class ReelInsightsViewModel : ViewModel() {
     fun updateMetrics(
         caption: String? = null,
         handle: String? = null,
+        thumbnailUrl: String? = null,
         views: Int? = null,
         viewers: Int? = null,
         avgWatchTime: String? = null,
@@ -102,6 +103,7 @@ class ReelInsightsViewModel : ViewModel() {
             current.copy(
                 caption = caption ?: current.caption,
                 handle = handle ?: current.handle,
+                thumbnailUrl = thumbnailUrl ?: current.thumbnailUrl,
                 views = views ?: current.views,
                 viewers = viewers ?: current.viewers,
                 avgWatchTime = avgWatchTime ?: current.avgWatchTime,

@@ -36,7 +36,7 @@ fun InteractiveRetentionChart(
     retentionPoints: List<RetentionPoint>,
     modifier: Modifier = Modifier
 ) {
-    var selectedIndex by remember { mutableIntStateOf(2.coerceAtMost(retentionPoints.size - 1)) } // default at 0:02 (92%)
+    var selectedIndex by remember { mutableIntStateOf(-1) }
 
     Box(
         modifier = modifier

@@ -38,11 +38,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.data.model.ReelInsightsData
 import com.example.ui.components.IgIcons
 import com.example.ui.theme.IgBackground
@@ -148,7 +150,16 @@ fun InsightsScreen(
                                     listOf(Color(0xFF381A40), Color(0xFF22162E), Color(0xFF14111C))
                                 )
                             )
-                    )
+                    ) {
+                        if (data.thumbnailUrl.isNotBlank()) {
+                            AsyncImage(
+                                model = data.thumbnailUrl,
+                                contentDescription = "Reel Thumbnail",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
                 }
             }
 
@@ -200,11 +211,11 @@ fun InsightsScreen(
                                     color = if (isSelected) IgTextPrimary else IgTextMuted,
                                     modifier = Modifier.padding(vertical = 12.dp)
                                 )
-                                // White active tab underline
+                                // White active tab underline (thin and crisp matching Real Instagram)
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(2.dp)
+                                        .height(1.5.dp)
                                         .background(if (isSelected) IgTextPrimary else Color.Transparent)
                                 )
                             }
