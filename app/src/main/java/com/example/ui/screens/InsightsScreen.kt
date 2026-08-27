@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -46,11 +47,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.ReelInsightsData
+import com.example.ui.components.IgIcons
 import com.example.ui.theme.IgBackground
 import com.example.ui.theme.IgBorder
 import com.example.ui.theme.IgDivider
@@ -167,11 +170,11 @@ fun InsightsScreen(
                     .padding(horizontal = 24.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                QuickStatItem(icon = Icons.Outlined.FavoriteBorder, count = data.likes.toString())
-                QuickStatItem(icon = Icons.Outlined.ChatBubbleOutline, count = data.comments.toString())
-                QuickStatItem(icon = Icons.Default.Repeat, count = data.reshares.toString())
-                QuickStatItem(icon = Icons.AutoMirrored.Filled.Send, count = data.sends.toString())
-                QuickStatItem(icon = Icons.Outlined.BookmarkBorder, count = data.saves.toString())
+                QuickStatItem(iconRes = IgIcons.likeRate, count = data.likes.toString())
+                QuickStatItem(iconRes = IgIcons.commentRate, count = data.comments.toString())
+                QuickStatItem(iconRes = IgIcons.repostRate, count = data.reshares.toString())
+                QuickStatItem(iconRes = IgIcons.shareRate, count = data.sends.toString())
+                QuickStatItem(iconRes = IgIcons.saveRate, count = data.saves.toString())
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -254,7 +257,7 @@ fun InsightsScreen(
 
 @Composable
 fun QuickStatItem(
-    icon: ImageVector,
+    @DrawableRes iconRes: Int,
     count: String,
     modifier: Modifier = Modifier
 ) {
@@ -263,7 +266,7 @@ fun QuickStatItem(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
-            imageVector = icon,
+            painter = painterResource(id = iconRes),
             contentDescription = null,
             tint = IgTextPrimary,
             modifier = Modifier.size(24.dp)

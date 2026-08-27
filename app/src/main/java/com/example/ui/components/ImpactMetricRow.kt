@@ -1,5 +1,6 @@
 package com.example.ui.components
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -28,7 +30,7 @@ import com.example.ui.theme.IgTextPrimary
 
 @Composable
 fun ImpactMetricRow(
-    icon: ImageVector,
+    @DrawableRes iconRes: Int,
     label: String,
     value: Float,
     qualifier: MetricQualifier,
@@ -38,27 +40,27 @@ fun ImpactMetricRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 11.dp)
+            .padding(vertical = 10.dp)
             .testTag("impact_row_${label.lowercase().replace(" ", "_")}"),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Circular icon container (Matching Real Instagram 42dp)
+        // Circular icon container (Matching Real Instagram 48dp)
         Box(
             modifier = Modifier
-                .size(42.dp)
+                .size(48.dp)
                 .clip(CircleShape)
                 .background(IgCardBg),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = icon,
+                painter = painterResource(id = iconRes),
                 contentDescription = label,
                 tint = IgTextPrimary,
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier.size(24.dp)
             )
         }
 
-        Spacer(modifier = Modifier.width(14.dp))
+        Spacer(modifier = Modifier.width(16.dp))
 
         // Metric Label
         Text(

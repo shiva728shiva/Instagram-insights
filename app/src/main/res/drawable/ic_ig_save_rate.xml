@@ -1,0 +1,13 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Instagram Outlined Bookmark -->
+    <path
+        android:pathData="M6.5,3.5 L17.5,3.5 C18.05,3.5 18.5,3.95 18.5,4.5 L18.5,20.5 L12,16.2 L5.5,20.5 L5.5,4.5 C5.5,3.95 5.95,3.5 6.5,3.5 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+</vector>

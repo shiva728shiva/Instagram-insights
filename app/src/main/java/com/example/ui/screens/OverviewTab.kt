@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -41,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.ReelInsightsData
+import com.example.ui.components.IgIcons
 import com.example.ui.components.ImpactMetricRow
 import com.example.ui.components.InteractiveRetentionChart
 import com.example.ui.components.InteractiveViewsOverTimeChart
@@ -218,61 +220,70 @@ fun OverviewTab(
             }
         }
 
-        Spacer(modifier = Modifier.height(30.dp))
+        Spacer(modifier = Modifier.height(28.dp))
 
         // 3. What impacts your views Section
-        Text(
-            text = "What impacts your views",
-            fontSize = 16.5.sp,
-            fontWeight = FontWeight.Bold,
-            color = IgTextPrimary
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "What impacts your views",
+                fontSize = 16.5.sp,
+                fontWeight = FontWeight.Bold,
+                color = IgTextPrimary
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Icon(
+                imageVector = Icons.Outlined.Info,
+                contentDescription = "Info",
+                tint = IgTextMuted,
+                modifier = Modifier.size(15.dp)
+            )
+        }
         Text(
             text = "Rates are listed in order of importance to reach.",
             fontSize = 13.sp,
             color = IgTextSecondary,
-            modifier = Modifier.padding(top = 3.dp, bottom = 8.dp)
+            modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
         )
 
-        HorizontalDivider(color = IgDivider, thickness = 1.dp)
-
         ImpactMetricRow(
-            icon = Icons.Outlined.Schedule,
+            iconRes = IgIcons.skipRate,
             label = "Skip rate",
             value = data.skipRate,
             qualifier = data.skipRateQualifier,
             loading = loading
         )
         ImpactMetricRow(
-            icon = Icons.AutoMirrored.Filled.Send,
+            iconRes = IgIcons.shareRate,
             label = "Share rate",
             value = data.shareRate,
             qualifier = data.shareRateQualifier,
             loading = loading
         )
         ImpactMetricRow(
-            icon = Icons.Outlined.FavoriteBorder,
+            iconRes = IgIcons.likeRate,
             label = "Like rate",
             value = data.likeRate,
             qualifier = data.likeRateQualifier,
             loading = loading
         )
         ImpactMetricRow(
-            icon = Icons.Outlined.BookmarkBorder,
+            iconRes = IgIcons.saveRate,
             label = "Save rate",
             value = data.saveRate,
             qualifier = data.saveRateQualifier,
             loading = loading
         )
         ImpactMetricRow(
-            icon = Icons.Default.Repeat,
+            iconRes = IgIcons.repostRate,
             label = "Repost rate",
             value = data.repostRate,
             qualifier = data.repostRateQualifier,
             loading = loading
         )
         ImpactMetricRow(
-            icon = Icons.Outlined.ChatBubbleOutline,
+            iconRes = IgIcons.commentRate,
             label = "Comment rate",
             value = data.commentRate,
             qualifier = data.commentRateQualifier,
