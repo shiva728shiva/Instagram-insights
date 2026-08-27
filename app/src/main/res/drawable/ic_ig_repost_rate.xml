@@ -3,32 +3,36 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- Instagram Repost / Double Cyclic Loop Arrows with thin stroke -->
-    <!-- Top Arrow Loop -->
+    <!-- Instagram Repost / Cyclic Retweet Arrows -->
+    <!-- Top Arc going right and down -->
     <path
-        android:pathData="M7.8,12 L7.8,9.0 C7.8,7.6 8.8,6.8 10.2,6.8 L15.8,6.8"
-        android:strokeColor="#F8F9FB"
-        android:strokeWidth="1.4"
+        android:pathData="M6,12 L6,9 C6,6.8 7.8,5 10,5 L18,5"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.75"
+        android:fillColor="#00000000"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"/>
     <path
-        android:pathData="M13.6,4.3 L16.3,6.8 L13.6,9.3"
-        android:strokeColor="#F8F9FB"
-        android:strokeWidth="1.4"
+        android:pathData="M15,2 L18.5,5 L15,8"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.75"
+        android:fillColor="#00000000"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"/>
 
-    <!-- Bottom Arrow Loop -->
+    <!-- Bottom Arc going left and up -->
     <path
-        android:pathData="M16.2,12 L16.2,15.0 C16.2,16.4 15.2,17.2 13.8,17.2 L8.2,17.2"
-        android:strokeColor="#F8F9FB"
-        android:strokeWidth="1.4"
+        android:pathData="M18,12 L18,15 C18,17.2 16.2,19 14,19 L6,19"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.75"
+        android:fillColor="#00000000"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"/>
     <path
-        android:pathData="M10.4,14.7 L7.7,17.2 L10.4,19.7"
-        android:strokeColor="#F8F9FB"
-        android:strokeWidth="1.4"
+        android:pathData="M9,16 L5.5,19 L9,22"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.75"
+        android:fillColor="#00000000"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"/>
 </vector>

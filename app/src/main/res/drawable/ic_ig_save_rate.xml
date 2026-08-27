@@ -3,11 +3,12 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- Instagram Outlined Bookmark with thin stroke -->
+    <!-- Instagram Outlined Bookmark / Save Icon -->
     <path
-        android:pathData="M6.8,4.5 L17.2,4.5 C17.8,4.5 18.2,4.9 18.2,5.5 L18.2,19.8 C18.2,20.4 17.5,20.7 17.1,20.3 L12,16.0 L6.9,20.3 C6.5,20.7 5.8,20.4 5.8,19.8 L5.8,5.5 C5.8,4.9 6.2,4.5 6.8,4.5 Z"
-        android:strokeColor="#F8F9FB"
-        android:strokeWidth="1.4"
+        android:pathData="M6.5,3.5 L17.5,3.5 C18.3,3.5 19,4.2 19,5 L19,21.5 L12,16.8 L5,21.5 L5,5 C5,4.2 5.7,3.5 6.5,3.5 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.75"
+        android:fillColor="#00000000"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"/>
 </vector>

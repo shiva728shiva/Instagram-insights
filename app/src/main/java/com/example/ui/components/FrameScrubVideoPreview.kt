@@ -4,9 +4,6 @@ import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.widget.VideoView
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -55,8 +52,9 @@ fun FrameScrubVideoPreview(
     thumbnailUrl: String,
     scrubSecond: Int,
     timeLabel: String = "",
-    width: Dp = 105.dp,
-    height: Dp = 140.dp,
+    width: Dp = 136.dp,
+    height: Dp = 240.dp,
+    cornerRadius: Dp = 12.dp,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -93,7 +91,7 @@ fun FrameScrubVideoPreview(
         modifier = modifier
             .width(width)
             .height(height)
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(cornerRadius))
             .background(
                 Brush.linearGradient(
                     listOf(Color(0xFF2E1B4E), Color(0xFF1E1E24), Color(0xFF0F0F12))
@@ -153,12 +151,12 @@ fun FrameScrubVideoPreview(
             }
         }
 
-        // Play/Pause Overlay indicator
+        // Circular Play/Pause Overlay indicator matching Real Instagram
         Box(
             modifier = Modifier
-                .size(38.dp)
+                .size(48.dp)
                 .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.45f))
+                .background(Color.Black.copy(alpha = 0.42f))
                 .border(1.5.dp, Color.White, CircleShape),
             contentAlignment = Alignment.Center
         ) {
@@ -166,7 +164,7 @@ fun FrameScrubVideoPreview(
                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                 contentDescription = if (isPlaying) "Pause" else "Play",
                 tint = Color.White,
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier.size(28.dp)
             )
         }
 
@@ -175,14 +173,14 @@ fun FrameScrubVideoPreview(
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(6.dp)
+                    .padding(8.dp)
                     .clip(RoundedCornerShape(4.dp))
-                    .background(Color.Black.copy(alpha = 0.7f))
+                    .background(Color.Black.copy(alpha = 0.75f))
                     .padding(horizontal = 6.dp, vertical = 2.dp)
             ) {
                 Text(
                     text = timeLabel,
-                    fontSize = 10.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )

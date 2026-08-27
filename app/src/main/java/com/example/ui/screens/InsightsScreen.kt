@@ -138,26 +138,27 @@ fun InsightsScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 12.dp),
+                        .padding(top = 8.dp, bottom = 18.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     FrameScrubVideoPreview(
                         videoUri = data.videoUri,
                         thumbnailUrl = data.thumbnailUrl,
                         scrubSecond = 0,
-                        width = 115.dp,
-                        height = 155.dp
+                        width = 136.dp,
+                        height = 240.dp,
+                        cornerRadius = 12.dp
                     )
                 }
             }
 
             item(key = "quick_stats") {
-                // Quick Stats Icon Row (Likes, Comments, Reshares, Sends, Saves)
+                // Quick Stats Icon Row (Likes, Comments, Reshares, Sends, Saves) Matching Screenshot 2 & 3
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                        .padding(horizontal = 20.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceAround
                 ) {
                     QuickStatItem(iconRes = IgIcons.likeRate, count = data.likes.toString())
                     QuickStatItem(iconRes = IgIcons.commentRate, count = data.comments.toString())
@@ -166,7 +167,7 @@ fun InsightsScreen(
                     QuickStatItem(iconRes = IgIcons.saveRate, count = data.saves.toString())
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(18.dp))
             }
 
             // Sticky Header: Tabs (Overview, Engagement, Audience) stay pinned under top bar on scroll
@@ -266,13 +267,13 @@ fun QuickStatItem(
             painter = painterResource(id = iconRes),
             contentDescription = null,
             tint = IgTextPrimary,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(25.dp)
         )
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = count,
-            fontSize = 13.5.sp,
-            fontWeight = FontWeight.SemiBold,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
             color = IgTextPrimary
         )
     }

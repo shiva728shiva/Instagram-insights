@@ -3,11 +3,12 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- Instagram Outlined Comment Bubble with thin stroke -->
+    <!-- Instagram Outlined Comment Bubble -->
     <path
-        android:pathData="M12,3.8 C7.0,3.8 3.0,7.5 3.0,12 C3.0,14.1 3.9,16.0 5.4,17.4 L4.4,20.4 C4.3,20.8 4.7,21.1 5.0,20.9 L8.5,19.6 C9.6,20.0 10.8,20.2 12,20.2 C17.0,20.2 21.0,16.5 21.0,12 C21.0,7.5 17.0,3.8 12,3.8 Z"
-        android:strokeColor="#F8F9FB"
-        android:strokeWidth="1.4"
+        android:pathData="M20.65,17.01 C21.52,15.53 22,13.82 22,12 C22,6.48 17.52,2 12,2 C6.48,2 2,6.48 2,12 C2,17.52 6.48,22 12,22 C13.82,22 15.53,21.52 17.01,20.65 L21.5,21.5 L20.65,17.01 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.75"
+        android:fillColor="#00000000"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"/>
 </vector>
