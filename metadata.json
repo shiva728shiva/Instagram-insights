@@ -1,0 +1,7 @@
+{
+  "name": "Reel Insights",
+  "description": "Pixel-perfect Instagram Reel Insights and analytics breakdown with interactive charts and metrics editor.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

@@ -1,0 +1,95 @@
+package com.example.ui.components
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.data.model.MetricQualifier
+import com.example.ui.theme.IgCardBg
+import com.example.ui.theme.IgTextPrimary
+
+@Composable
+fun ImpactMetricRow(
+    icon: ImageVector,
+    label: String,
+    value: Float,
+    qualifier: MetricQualifier,
+    loading: Boolean = false,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp)
+            .testTag("impact_row_${label.lowercase().replace(" ", "_")}"),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Circular icon container
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(IgCardBg),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = IgTextPrimary,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(14.dp))
+
+        // Metric Label
+        Text(
+            text = label,
+            fontSize = 14.5.sp,
+            fontWeight = FontWeight.Medium,
+            color = IgTextPrimary,
+            modifier = Modifier.weight(1f)
+        )
+
+        // Percentage and Qualifier column on the right
+        if (loading) {
+            ShimmerBox(width = 50.dp, height = 18.dp)
+        } else {
+            Column(
+                horizontalAlignment = Alignment.End
+            ) {
+                Text(
+                    text = String.format("%.1f%%", value),
+                    fontSize = 14.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = IgTextPrimary
+                )
+                Text(
+                    text = qualifier.label,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = qualifier.color,
+                    textAlign = TextAlign.End
+                )
+            }
+        }
+    }
+}
