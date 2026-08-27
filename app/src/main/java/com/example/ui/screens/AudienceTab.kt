@@ -41,27 +41,12 @@ fun AudienceTab(
     ) {
         // 1. Who viewed your reel
         SectionHeader(
-            title = "Who viewed your reel",
-            rightContent = {
-                IconButton(
-                    onClick = onEditDemographicsClick,
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit Ratio",
-                        tint = IgTextSecondary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
+            title = "Who viewed your reel"
         )
         Spacer(modifier = Modifier.height(10.dp))
 
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onEditDemographicsClick() }
+            modifier = Modifier.fillMaxWidth()
         ) {
             MetricProgressBar(
                 label = "Followers",
@@ -81,20 +66,7 @@ fun AudienceTab(
 
         // 2. Audience details
         SectionHeader(
-            title = "Audience details",
-            rightContent = {
-                IconButton(
-                    onClick = onEditDemographicsClick,
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit Country & Details",
-                        tint = IgTextSecondary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
+            title = "Audience details"
         )
         Spacer(modifier = Modifier.height(14.dp))
 

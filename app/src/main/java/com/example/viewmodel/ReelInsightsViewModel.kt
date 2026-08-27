@@ -2,6 +2,7 @@ package com.example.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.HealthyGraphGenerator
 import com.example.data.ProfileRepository
 import com.example.data.model.MetricQualifier
 import com.example.data.model.ReelInsightsData
@@ -159,22 +160,40 @@ class ReelInsightsViewModel : ViewModel() {
         genderDemographics: Map<String, Float>? = null
     ) {
         _data.update { current ->
+            val newViews = views ?: current.views
+            val newLikes = likes ?: current.likes
+            val viewsChanged = views != null && views != current.views
+
+            // Compute healthy graphs and metrics if views changed or if graphs need refresh
+            val healthyViewsOverTime = if (viewsChanged) {
+                HealthyGraphGenerator.generateViewsOverTime(totalViews = newViews)
+            } else current.viewsOverTime
+
+            val durationSec = ((current.videoDurationMs / 1000L).toInt()).coerceIn(4, 60)
+            val healthyRetention = if (viewsChanged) {
+                HealthyGraphGenerator.generateRetentionCurve(durationSeconds = durationSec, totalViews = newViews)
+            } else current.retention
+
+            val healthyWhenLiked = if (viewsChanged || (likes != null && likes != current.likes)) {
+                HealthyGraphGenerator.generateWhenLiked(durationSeconds = durationSec, likesCount = newLikes)
+            } else current.whenLiked
+
             val updated = current.copy(
                 caption = caption ?: current.caption,
                 handle = handle ?: current.handle,
                 thumbnailUrl = thumbnailUrl ?: current.thumbnailUrl,
-                views = views ?: current.views,
-                viewers = viewers ?: current.viewers,
+                views = newViews,
+                viewers = viewers ?: if (viewsChanged) (newViews * 0.74).toInt().coerceAtLeast(1) else current.viewers,
                 avgWatchTime = avgWatchTime ?: current.avgWatchTime,
                 follows = follows ?: current.follows,
-                likes = likes ?: current.likes,
+                likes = newLikes,
                 comments = comments ?: current.comments,
                 reshares = reshares ?: current.reshares,
                 sends = sends ?: current.sends,
                 saves = saves ?: current.saves,
                 skipRate = skipRate ?: current.skipRate,
                 skipRateQualifier = skipRateQualifier ?: current.skipRateQualifier,
-                likeRate = likeRate ?: current.likeRate,
+                likeRate = likeRate ?: if (viewsChanged) ((newLikes.toFloat() / newViews.coerceAtLeast(1)) * 100f) else current.likeRate,
                 likeRateQualifier = likeRateQualifier ?: current.likeRateQualifier,
                 shareRate = shareRate ?: current.shareRate,
                 saveRate = saveRate ?: current.saveRate,
@@ -188,7 +207,10 @@ class ReelInsightsViewModel : ViewModel() {
                 nonFollowersAudiencePct = nonFollowersAudiencePct ?: current.nonFollowersAudiencePct,
                 countryDemographics = countryDemographics ?: current.countryDemographics,
                 ageDemographics = ageDemographics ?: current.ageDemographics,
-                genderDemographics = genderDemographics ?: current.genderDemographics
+                genderDemographics = genderDemographics ?: current.genderDemographics,
+                viewsOverTime = healthyViewsOverTime,
+                retention = healthyRetention,
+                whenLiked = healthyWhenLiked
             )
             // Sync active reel
             _activeReel.update { it.copy(

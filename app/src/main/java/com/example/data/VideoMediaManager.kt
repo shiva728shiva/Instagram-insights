@@ -97,34 +97,12 @@ object VideoMediaManager {
         username: String = "alishaasassy"
     ): ReelItem {
         val durationSec = videoInfo.durationSeconds.coerceAtLeast(4)
+        val initialViews = 1840
+        val initialLikes = 68
 
-        // Build dynamic retention points from 0:00 to 0:XX
-        val retentionList = mutableListOf<RetentionPoint>()
-        for (i in 0..durationSec) {
-            val label = formatTimeLabel(i)
-            // Realistic retention curve drop off
-            val percent = when {
-                i == 0 -> 100f
-                i == 1 -> 98f
-                i == 2 -> 96f
-                i == 3 -> 93f
-                i <= durationSec / 2 -> (90f - (i * 8f)).coerceAtLeast(30f)
-                else -> (30f - ((i - durationSec / 2) * 2.5f)).coerceAtLeast(12f)
-            }
-            retentionList.add(RetentionPoint(label, percent))
-        }
-
-        // When liked points across the video duration
-        val likePoints = List((durationSec + 1).coerceAtLeast(8)) { index ->
-            when {
-                index == 0 -> 15f
-                index == 1 -> 85f
-                index == 2 -> 100f
-                index == 3 -> 95f
-                index == durationSec / 2 -> 100f
-                else -> (40f + (index * 7f) % 60f)
-            }
-        }
+        val retentionList = HealthyGraphGenerator.generateRetentionCurve(durationSeconds = durationSec, totalViews = initialViews)
+        val likePoints = HealthyGraphGenerator.generateWhenLiked(durationSeconds = durationSec, likesCount = initialLikes)
+        val viewsOverTimeList = HealthyGraphGenerator.generateViewsOverTime(totalViews = initialViews)
 
         val insights = ReelInsightsData(
             caption = "My uploaded reel video 🎬🔥 #viral #reels",
@@ -132,20 +110,20 @@ object VideoMediaManager {
             thumbnailUrl = videoInfo.uri.toString(),
             videoUri = videoInfo.uri.toString(),
             videoDurationMs = videoInfo.durationMs,
-            likes = 34,
-            comments = 4,
-            reshares = 2,
-            sends = 3,
-            saves = 1,
-            views = 1420,
-            viewers = 390,
-            avgWatchTime = "${(durationSec * 0.65).toInt()}s",
-            follows = 2,
+            likes = initialLikes,
+            comments = 6,
+            reshares = 4,
+            sends = 5,
+            saves = 8,
+            views = initialViews,
+            viewers = (initialViews * 0.74).toInt(),
+            avgWatchTime = "${(durationSec * 0.85).toInt().coerceAtLeast(3)}s",
+            follows = 4,
             skipRate = 10.4f,
             skipRateQualifier = MetricQualifier.LOWER,
             shareRate = 0.8f,
             shareRateQualifier = MetricQualifier.TYPICAL,
-            likeRate = 2.4f,
+            likeRate = ((initialLikes.toFloat() / initialViews) * 100f),
             likeRateQualifier = MetricQualifier.HIGHER,
             saveRate = 0.5f,
             saveRateQualifier = MetricQualifier.TYPICAL,
@@ -153,6 +131,7 @@ object VideoMediaManager {
             repostRateQualifier = MetricQualifier.TYPICAL,
             commentRate = 0.6f,
             commentRateQualifier = MetricQualifier.TYPICAL,
+            viewsOverTime = viewsOverTimeList,
             retention = retentionList,
             whenLiked = likePoints,
             reelsTabPct = 68.4f,

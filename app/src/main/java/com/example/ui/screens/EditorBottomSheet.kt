@@ -126,6 +126,10 @@ fun EditorBottomSheet(
     var country2Pct by remember(data) { mutableStateOf((data.countryDemographics.values.elementAtOrNull(1) ?: 4.0f).toString()) }
     var country3Name by remember(data) { mutableStateOf(data.countryDemographics.keys.elementAtOrNull(2) ?: "Brazil") }
     var country3Pct by remember(data) { mutableStateOf((data.countryDemographics.values.elementAtOrNull(2) ?: 4.0f).toString()) }
+    var country4Name by remember(data) { mutableStateOf(data.countryDemographics.keys.elementAtOrNull(3) ?: "United Kingdom") }
+    var country4Pct by remember(data) { mutableStateOf((data.countryDemographics.values.elementAtOrNull(3) ?: 2.5f).toString()) }
+    var country5Name by remember(data) { mutableStateOf(data.countryDemographics.keys.elementAtOrNull(4) ?: "Canada") }
+    var country5Pct by remember(data) { mutableStateOf((data.countryDemographics.values.elementAtOrNull(4) ?: 1.8f).toString()) }
 
     val scrollState = rememberScrollState()
 
@@ -246,7 +250,7 @@ fun EditorBottomSheet(
                     CustomTextField(value = nonFollowersPct, onValueChange = { nonFollowersPct = it }, label = "Non-followers %", isNumber = true, modifier = Modifier.weight(1f))
                 }
 
-                // Audience: Country Demographics
+                // Audience: Country Demographics (5 countries)
                 SectionLabel("AUDIENCE: TOP COUNTRIES (%)")
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     CustomTextField(value = country1Name, onValueChange = { country1Name = it }, label = "Country 1", modifier = Modifier.weight(1.5f))
@@ -259,6 +263,14 @@ fun EditorBottomSheet(
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     CustomTextField(value = country3Name, onValueChange = { country3Name = it }, label = "Country 3", modifier = Modifier.weight(1.5f))
                     CustomTextField(value = country3Pct, onValueChange = { country3Pct = it }, label = "%", isNumber = true, modifier = Modifier.weight(1f))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    CustomTextField(value = country4Name, onValueChange = { country4Name = it }, label = "Country 4", modifier = Modifier.weight(1.5f))
+                    CustomTextField(value = country4Pct, onValueChange = { country4Pct = it }, label = "%", isNumber = true, modifier = Modifier.weight(1f))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    CustomTextField(value = country5Name, onValueChange = { country5Name = it }, label = "Country 5", modifier = Modifier.weight(1.5f))
+                    CustomTextField(value = country5Pct, onValueChange = { country5Pct = it }, label = "%", isNumber = true, modifier = Modifier.weight(1f))
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -273,6 +285,8 @@ fun EditorBottomSheet(
                     if (country1Name.isNotBlank()) countryMap[country1Name.trim()] = country1Pct.toFloatOrNull() ?: 44f
                     if (country2Name.isNotBlank()) countryMap[country2Name.trim()] = country2Pct.toFloatOrNull() ?: 4f
                     if (country3Name.isNotBlank()) countryMap[country3Name.trim()] = country3Pct.toFloatOrNull() ?: 4f
+                    if (country4Name.isNotBlank()) countryMap[country4Name.trim()] = country4Pct.toFloatOrNull() ?: 2.5f
+                    if (country5Name.isNotBlank()) countryMap[country5Name.trim()] = country5Pct.toFloatOrNull() ?: 1.8f
 
                     onSave(
                         caption,

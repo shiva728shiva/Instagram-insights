@@ -146,6 +146,7 @@ fun InsightsScreen(
                         videoUri = data.videoUri,
                         thumbnailUrl = data.thumbnailUrl,
                         scrubSecond = 0,
+                        showPlayIcon = false,
                         width = 136.dp,
                         height = 240.dp,
                         cornerRadius = 12.dp

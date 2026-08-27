@@ -126,10 +126,13 @@ fun InteractiveViewsOverTimeChart(
             val chartWidth = width - leftPadding - rightPadding
             val chartHeight = height - topPadding - bottomPadding
 
-            val maxY = 400f
-            val yLevels = listOf(400, 200, 0)
+            // Dynamically calculate maxY and levels from the data points
+            val maxDataVal = (dataPoints.maxOfOrNull { maxOf(it.viewsThisReel, it.viewsTypical) } ?: 400f).coerceAtLeast(10f)
+            val maxY = calculateNiceMax(maxDataVal)
+            val midY = maxY / 2f
+            val yLevels = listOf(maxY, midY, 0f)
 
-            // 1. Draw horizontal grid lines and exact raw Y-axis numbers (400, 200, 0)
+            // 1. Draw horizontal grid lines and dynamic Y-axis numbers
             yLevels.forEach { yVal ->
                 val yPos = topPadding + (1f - (yVal / maxY)) * chartHeight
 
@@ -141,15 +144,16 @@ fun InteractiveViewsOverTimeChart(
                     strokeWidth = 1.2.dp.toPx()
                 )
 
-                // Raw Y-axis label text
+                // Dynamic Y-axis label text
                 drawContext.canvas.nativeCanvas.apply {
                     val paint = android.graphics.Paint().apply {
                         color = android.graphics.Color.parseColor("#8E8E93")
-                        textSize = 30f
+                        textSize = 28f
                         isAntiAlias = true
                         textAlign = android.graphics.Paint.Align.RIGHT
                     }
-                    drawText(yVal.toString(), leftPadding - 25f, yPos + 10f, paint)
+                    val formattedLabel = formatAxisNumber(yVal)
+                    drawText(formattedLabel, leftPadding - 20f, yPos + 9f, paint)
                 }
             }
 
@@ -235,8 +239,9 @@ fun InteractiveViewsOverTimeChart(
                     center = coords
                 )
 
-                // Tooltip bubble at the top: e.g. "359" (top) and "Aug 20" (bottom)
-                val displayViews = (activePoint.viewsThisReel * animatedFactor).toInt().toString()
+                // Tooltip bubble at the top: e.g. "1,379" (top) and "Aug 20" (bottom)
+                val rawVal = (activePoint.viewsThisReel * animatedFactor).toInt()
+                val displayViews = String.format(java.util.Locale.US, "%,d", rawVal)
                 val dateLabel = activePoint.dateLabel
 
                 val pViews = android.graphics.Paint().apply {
@@ -254,7 +259,8 @@ fun InteractiveViewsOverTimeChart(
                     textAlign = android.graphics.Paint.Align.CENTER
                 }
 
-                val bubbleWidth = 110f
+                val textWidth = pViews.measureText(displayViews)
+                val bubbleWidth = maxOf(110f, textWidth + 36f)
                 val bubbleHeight = 62f
                 val bubbleX = (coords.x - bubbleWidth / 2).coerceIn(10f, width - bubbleWidth - 10f)
                 val bubbleY = 4f
@@ -286,3 +292,44 @@ fun InteractiveViewsOverTimeChart(
         }
     }
 }
+
+private fun calculateNiceMax(maxValue: Float): Float {
+    if (maxValue <= 0f) return 100f
+    val exp = kotlin.math.floor(kotlin.math.log10(maxValue.toDouble()))
+    val magnitude = Math.pow(10.0, exp).toFloat()
+    val normalized = maxValue / magnitude
+    val niceNormalized = when {
+        normalized <= 1.0f -> 1.0f
+        normalized <= 1.5f -> 1.5f
+        normalized <= 2.0f -> 2.0f
+        normalized <= 2.5f -> 2.5f
+        normalized <= 3.0f -> 3.0f
+        normalized <= 4.0f -> 4.0f
+        normalized <= 5.0f -> 5.0f
+        normalized <= 6.0f -> 6.0f
+        normalized <= 8.0f -> 8.0f
+        else -> 10.0f
+    }
+    return (niceNormalized * magnitude).coerceAtLeast(10f)
+}
+
+private fun formatAxisNumber(value: Float): String {
+    val intVal = value.toInt()
+    return when {
+        value >= 1_000_000f -> {
+            if (value % 1_000_000f == 0f) "${(value / 1_000_000f).toInt()}M"
+            else String.format(java.util.Locale.US, "%.1fM", value / 1_000_000f)
+        }
+        value >= 10_000f -> {
+            if (value % 1000f == 0f) "${(value / 1000f).toInt()}K"
+            else String.format(java.util.Locale.US, "%.1fK", value / 1000f)
+        }
+        value >= 1_000f -> {
+            if (value % 1000f == 0f) "${(value / 1000f).toInt()}K"
+            else if ((value % 100f) == 0f) String.format(java.util.Locale.US, "%.1fK", value / 1000f)
+            else String.format(java.util.Locale.US, "%,d", intVal)
+        }
+        else -> intVal.toString()
+    }
+}
+

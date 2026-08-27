@@ -120,35 +120,66 @@ object ProfileRepository {
         val category = if (isDefault) "Fan page" else "Creator"
         val avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80"
 
-        val defaultInsights = ReelInsightsData(
-            caption = "IG model @piperrockelle recently sparked attentio ...",
-            handle = username,
-            thumbnailUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80",
-            likes = 3,
-            comments = 0,
-            reshares = 1,
-            sends = 0,
-            saves = 0,
+        fun createDynamicInsights(
+            views: Int,
+            likes: Int,
+            viewers: Int,
+            caption: String,
+            thumb: String,
+            avgWatchTime: String = "16s",
+            comments: Int = 0,
+            reshares: Int = 1,
+            sends: Int = 0,
+            saves: Int = 0,
+            durationSec: Int = 8
+        ): ReelInsightsData {
+            val healthyViewsOverTime = HealthyGraphGenerator.generateViewsOverTime(totalViews = views)
+            val healthyRetention = HealthyGraphGenerator.generateRetentionCurve(durationSeconds = durationSec, totalViews = views)
+            val healthyWhenLiked = HealthyGraphGenerator.generateWhenLiked(durationSeconds = durationSec, likesCount = likes)
+
+            return ReelInsightsData(
+                caption = caption,
+                handle = username,
+                thumbnailUrl = thumb,
+                likes = likes,
+                comments = comments,
+                reshares = reshares,
+                sends = sends,
+                saves = saves,
+                views = views,
+                viewers = viewers,
+                avgWatchTime = avgWatchTime,
+                follows = (views * 0.002).toInt(),
+                skipRate = 11.9f,
+                skipRateQualifier = MetricQualifier.LOWER,
+                shareRate = if (reshares > 0) ((reshares.toFloat() / views) * 100f) else 0.0f,
+                shareRateQualifier = MetricQualifier.TYPICAL,
+                likeRate = ((likes.toFloat() / views) * 100f),
+                likeRateQualifier = MetricQualifier.HIGHER,
+                saveRate = if (saves > 0) ((saves.toFloat() / views) * 100f) else 0.0f,
+                saveRateQualifier = MetricQualifier.TYPICAL,
+                repostRate = 0.0f,
+                repostRateQualifier = MetricQualifier.TYPICAL,
+                commentRate = if (comments > 0) ((comments.toFloat() / views) * 100f) else 0.0f,
+                commentRateQualifier = MetricQualifier.TYPICAL,
+                viewsOverTime = healthyViewsOverTime,
+                retention = healthyRetention,
+                whenLiked = healthyWhenLiked,
+                reelsTabPct = 22.1f,
+                explorePct = 3.4f,
+                profilePct = 0.8f,
+                feedPct = 0.0f
+            )
+        }
+
+        val defaultInsights = createDynamicInsights(
             views = 1379,
+            likes = 3,
             viewers = 362,
+            caption = "IG model @piperrockelle recently sparked attentio ...",
+            thumb = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80",
             avgWatchTime = "16s",
-            follows = 0,
-            skipRate = 11.9f,
-            skipRateQualifier = MetricQualifier.LOWER,
-            shareRate = 0.0f,
-            shareRateQualifier = MetricQualifier.TYPICAL,
-            likeRate = 0.8f,
-            likeRateQualifier = MetricQualifier.HIGHER,
-            saveRate = 0.0f,
-            saveRateQualifier = MetricQualifier.TYPICAL,
-            repostRate = 0.0f,
-            repostRateQualifier = MetricQualifier.TYPICAL,
-            commentRate = 0.0f,
-            commentRateQualifier = MetricQualifier.TYPICAL,
-            reelsTabPct = 22.1f,
-            explorePct = 3.4f,
-            profilePct = 0.8f,
-            feedPct = 0.0f
+            reshares = 1
         )
 
         val reelsList = listOf(
@@ -164,12 +195,15 @@ object ProfileRepository {
                 caption = "Live reaction to the craziest moment on stream today 🔴 #live #stream",
                 topOverlayText = "",
                 watermarks = emptyList(),
-                insightsData = defaultInsights.copy(
+                insightsData = createDynamicInsights(
                     views = 336,
-                    viewers = 120,
                     likes = 14,
+                    viewers = 120,
+                    caption = "Live reaction to the craziest moment on stream today 🔴 #live #stream",
+                    thumb = "https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=500&auto=format&fit=crop&q=80",
+                    avgWatchTime = "9s",
                     comments = 2,
-                    avgWatchTime = "9s"
+                    sends = 1
                 )
             ),
             ReelItem(
@@ -198,11 +232,14 @@ object ProfileRepository {
                 caption = "Outfit of the day in pink sweater 🌸💫 #ootd #aesthetic",
                 topOverlayText = "",
                 watermarks = emptyList(),
-                insightsData = defaultInsights.copy(
+                insightsData = createDynamicInsights(
                     views = 160,
-                    viewers = 85,
                     likes = 8,
-                    avgWatchTime = "6s"
+                    viewers = 85,
+                    caption = "Outfit of the day in pink sweater 🌸💫 #ootd #aesthetic",
+                    thumb = "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500&auto=format&fit=crop&q=80",
+                    avgWatchTime = "6s",
+                    saves = 1
                 )
             ),
             ReelItem(
@@ -217,12 +254,17 @@ object ProfileRepository {
                 caption = "Anime art portrait transformation process 🎨✨ #illustration #art",
                 topOverlayText = "",
                 watermarks = emptyList(),
-                insightsData = defaultInsights.copy(
+                insightsData = createDynamicInsights(
                     views = 2140,
-                    viewers = 920,
                     likes = 84,
+                    viewers = 920,
+                    caption = "Anime art portrait transformation process 🎨✨ #illustration #art",
+                    thumb = "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=500&auto=format&fit=crop&q=80",
+                    avgWatchTime = "14s",
                     comments = 6,
-                    avgWatchTime = "14s"
+                    reshares = 4,
+                    sends = 3,
+                    saves = 12
                 )
             ),
             ReelItem(
@@ -237,12 +279,17 @@ object ProfileRepository {
                 caption = "Studio lighting secret you need to know 💡 #creator #bts",
                 topOverlayText = "",
                 watermarks = emptyList(),
-                insightsData = defaultInsights.copy(
+                insightsData = createDynamicInsights(
                     views = 4510,
-                    viewers = 1840,
                     likes = 192,
+                    viewers = 1840,
+                    caption = "Studio lighting secret you need to know 💡 #creator #bts",
+                    thumb = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=80",
+                    avgWatchTime = "18s",
                     comments = 15,
-                    avgWatchTime = "18s"
+                    reshares = 8,
+                    sends = 7,
+                    saves = 24
                 )
             ),
             ReelItem(
@@ -257,12 +304,17 @@ object ProfileRepository {
                 caption = "Quick recap of the weekend event 🌇✨ #vlog #weekend",
                 topOverlayText = "",
                 watermarks = emptyList(),
-                insightsData = defaultInsights.copy(
+                insightsData = createDynamicInsights(
                     views = 890,
-                    viewers = 410,
                     likes = 45,
+                    viewers = 410,
+                    caption = "Quick recap of the weekend event 🌇✨ #vlog #weekend",
+                    thumb = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&auto=format&fit=crop&q=80",
+                    avgWatchTime = "11s",
                     comments = 3,
-                    avgWatchTime = "11s"
+                    reshares = 1,
+                    sends = 2,
+                    saves = 5
                 )
             )
         )

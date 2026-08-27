@@ -34,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -304,8 +305,8 @@ fun OverviewTab(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        var selectedRetentionIndex by remember(data.retention) { mutableIntStateOf(0) }
-        val activeRetentionPoint = data.retention.getOrNull(selectedRetentionIndex) ?: data.retention.firstOrNull()
+        var selectedRetentionIndex by remember(data.retention) { mutableStateOf<Int?>(null) }
+        val activeRetentionPoint = selectedRetentionIndex?.let { data.retention.getOrNull(it) }
         val scrubTimeLabel = activeRetentionPoint?.timeLabel ?: "0:00"
 
         // Video Thumbnail Preview with Play Icon (9:16 Portrait Dimension) & Frame-Synced Scrubbing
@@ -316,8 +317,9 @@ fun OverviewTab(
             FrameScrubVideoPreview(
                 videoUri = data.videoUri,
                 thumbnailUrl = data.thumbnailUrl,
-                scrubSecond = selectedRetentionIndex,
-                timeLabel = scrubTimeLabel
+                scrubSecond = selectedRetentionIndex ?: 0,
+                timeLabel = scrubTimeLabel,
+                showPlayIcon = true
             )
         }
 

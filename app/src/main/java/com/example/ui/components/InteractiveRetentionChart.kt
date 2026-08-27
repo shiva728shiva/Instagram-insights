@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -34,10 +35,12 @@ import com.example.ui.theme.IgTooltipBg
 @Composable
 fun InteractiveRetentionChart(
     retentionPoints: List<RetentionPoint>,
-    selectedIndex: Int = 0,
+    selectedIndex: Int? = null,
     onIndexChange: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    var isTouching by remember { mutableStateOf(false) }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -55,20 +58,34 @@ fun InteractiveRetentionChart(
                         val relX = (offset.x - leftPadding).coerceIn(0f, chartWidth)
                         val step = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
                         val index = (relX / step).toInt().coerceIn(0, retentionPoints.size - 1)
+                        isTouching = true
                         onIndexChange(index)
                     }
                 }
                 .pointerInput(retentionPoints) {
-                    detectDragGestures { change, _ ->
-                        change.consume()
-                        val leftPadding = 75f
-                        val rightPadding = 20f
-                        val chartWidth = size.width - leftPadding - rightPadding
-                        val relX = (change.position.x - leftPadding).coerceIn(0f, chartWidth)
-                        val step = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
-                        val index = (relX / step).toInt().coerceIn(0, retentionPoints.size - 1)
-                        onIndexChange(index)
-                    }
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            val leftPadding = 75f
+                            val rightPadding = 20f
+                            val chartWidth = size.width - leftPadding - rightPadding
+                            val relX = (offset.x - leftPadding).coerceIn(0f, chartWidth)
+                            val step = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
+                            val index = (relX / step).toInt().coerceIn(0, retentionPoints.size - 1)
+                            isTouching = true
+                            onIndexChange(index)
+                        },
+                        onDrag = { change, _ ->
+                            change.consume()
+                            val leftPadding = 75f
+                            val rightPadding = 20f
+                            val chartWidth = size.width - leftPadding - rightPadding
+                            val relX = (change.position.x - leftPadding).coerceIn(0f, chartWidth)
+                            val step = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
+                            val index = (relX / step).toInt().coerceIn(0, retentionPoints.size - 1)
+                            isTouching = true
+                            onIndexChange(index)
+                        }
+                    )
                 }
         ) {
             val width = size.width
@@ -144,59 +161,48 @@ fun InteractiveRetentionChart(
                 )
             )
 
-            // 3. Draw active scrubber if selected
-            if (selectedIndex in retentionPoints.indices) {
-                val activePoint = retentionPoints[selectedIndex]
-                val coords = getCoords(selectedIndex, activePoint.percent)
+            // 3. Draw active scrubber line & tooltip when user touches/scrubs
+            val activeIdx = selectedIndex
+            if (activeIdx != null && activeIdx in retentionPoints.indices && (isTouching || selectedIndex != null)) {
+                val activePoint = retentionPoints[activeIdx]
+                val coords = getCoords(activeIdx, activePoint.percent)
 
-                // Vertical dashed guide line
-                drawLine(
-                    color = Color(0xFF6E6E73),
-                    start = Offset(coords.x, topPadding - 10f),
-                    end = Offset(coords.x, height - bottomPadding),
-                    strokeWidth = 1.5.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f), 0f)
-                )
-
-                // Glow and circle on point
-                drawCircle(
-                    color = IgMagenta,
-                    radius = 7.dp.toPx(),
-                    center = coords
-                )
-                drawCircle(
-                    color = Color.White,
-                    radius = 4.dp.toPx(),
-                    center = coords
-                )
-
-                // Floating tooltip bubble: e.g. "92%\n0:02"
-                val percentText = "${activePoint.percent.toInt()}%"
-                val timeText = activePoint.timeLabel
-
-                val bubbleWidth = 120f
-                val bubbleHeight = 64f
+                val bubbleWidth = 114f
+                val bubbleHeight = 60f
                 val bubbleX = (coords.x - bubbleWidth / 2).coerceIn(10f, width - bubbleWidth - 10f)
                 val bubbleY = 4f
 
+                // Vertical dashed guide line from tooltip pointer down to 0% line
+                drawLine(
+                    color = Color(0xFF9E9EA4),
+                    start = Offset(coords.x, bubbleY + bubbleHeight + 8f),
+                    end = Offset(coords.x, topPadding + chartHeight),
+                    strokeWidth = 1.5.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f), 0f)
+                )
+
+                // Tooltip background rounded rectangle
                 drawRoundRect(
                     color = IgTooltipBg,
                     topLeft = Offset(bubbleX, bubbleY),
                     size = Size(bubbleWidth, bubbleHeight),
-                    cornerRadius = CornerRadius(14f, 14f)
+                    cornerRadius = CornerRadius(12f, 12f)
                 )
 
-                // Pointer triangle
+                // Pointer triangle pointing straight down to dashed line
                 val arrowPath = Path().apply {
                     val arrowCenterX = coords.x.coerceIn(bubbleX + 14f, bubbleX + bubbleWidth - 14f)
-                    moveTo(arrowCenterX - 8f, bubbleY + bubbleHeight)
-                    lineTo(arrowCenterX + 8f, bubbleY + bubbleHeight)
+                    moveTo(arrowCenterX - 7f, bubbleY + bubbleHeight)
+                    lineTo(arrowCenterX + 7f, bubbleY + bubbleHeight)
                     lineTo(arrowCenterX, bubbleY + bubbleHeight + 8f)
                     close()
                 }
                 drawPath(arrowPath, color = IgTooltipBg)
 
-                // Draw Text in bubble
+                // Draw text in tooltip (Percentage on top, Time on bottom)
+                val percentText = "${activePoint.percent.toInt()}%"
+                val timeText = activePoint.timeLabel
+
                 drawContext.canvas.nativeCanvas.apply {
                     val p1 = android.graphics.Paint().apply {
                         color = android.graphics.Color.WHITE
@@ -206,14 +212,14 @@ fun InteractiveRetentionChart(
                         textAlign = android.graphics.Paint.Align.CENTER
                     }
                     val p2 = android.graphics.Paint().apply {
-                        color = android.graphics.Color.parseColor("#CCCCCC")
+                        color = android.graphics.Color.parseColor("#B0B0B4")
                         textSize = 22f
                         isAntiAlias = true
                         textAlign = android.graphics.Paint.Align.CENTER
                     }
 
-                    drawText(percentText, bubbleX + bubbleWidth / 2, bubbleY + 28f, p1)
-                    drawText(timeText, bubbleX + bubbleWidth / 2, bubbleY + 52f, p2)
+                    drawText(percentText, bubbleX + bubbleWidth / 2, bubbleY + 26f, p1)
+                    drawText(timeText, bubbleX + bubbleWidth / 2, bubbleY + 50f, p2)
                 }
             }
         }

@@ -52,6 +52,7 @@ fun FrameScrubVideoPreview(
     thumbnailUrl: String,
     scrubSecond: Int,
     timeLabel: String = "",
+    showPlayIcon: Boolean = true,
     width: Dp = 136.dp,
     height: Dp = 240.dp,
     cornerRadius: Dp = 12.dp,
@@ -151,21 +152,45 @@ fun FrameScrubVideoPreview(
             }
         }
 
-        // Circular Play/Pause Overlay indicator matching Real Instagram
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.42f))
-                .border(1.5.dp, Color.White, CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                contentDescription = if (isPlaying) "Pause" else "Play",
-                tint = Color.White,
-                modifier = Modifier.size(28.dp)
-            )
+        // Instagram Hollow Outlined Play Icon / Pause Icon (Only shown on graph preview when showPlayIcon is true)
+        if (showPlayIcon && !isPlaying) {
+            androidx.compose.foundation.Canvas(
+                modifier = Modifier
+                    .size(44.dp)
+            ) {
+                val cx = size.width / 2
+                val cy = size.height / 2
+                val r = size.width * 0.38f
+
+                val playPath = androidx.compose.ui.graphics.Path().apply {
+                    moveTo(cx - r * 0.62f, cy - r * 0.82f)
+                    lineTo(cx + r * 0.88f, cy)
+                    lineTo(cx - r * 0.62f, cy + r * 0.82f)
+                    close()
+                }
+
+                // Black outline/shadow for contrast
+                drawPath(
+                    path = playPath,
+                    color = Color.Black.copy(alpha = 0.65f),
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(
+                        width = 5.dp.toPx(),
+                        cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                        join = androidx.compose.ui.graphics.StrokeJoin.Round
+                    )
+                )
+
+                // White crisp hollow outline
+                drawPath(
+                    path = playPath,
+                    color = Color.White,
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(
+                        width = 3.dp.toPx(),
+                        cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                        join = androidx.compose.ui.graphics.StrokeJoin.Round
+                    )
+                )
+            }
         }
     }
 }
