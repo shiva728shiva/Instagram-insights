@@ -67,6 +67,7 @@ fun InsightsScreen(
     onAudienceSubTabSelect: (String) -> Unit,
     onBackClick: () -> Unit,
     onOpenEditor: () -> Unit,
+    onOpenDemographicsEditor: () -> Unit = onOpenEditor,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -157,6 +158,7 @@ fun InsightsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .clickable { onOpenEditor() }
                         .padding(horizontal = 20.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
@@ -243,7 +245,8 @@ fun InsightsScreen(
                                 data = data,
                                 loading = loading,
                                 subTab = selectedAudienceSubTab,
-                                onSubTabSelect = onAudienceSubTabSelect
+                                onSubTabSelect = onAudienceSubTabSelect,
+                                onEditDemographicsClick = onOpenDemographicsEditor
                             )
                         }
                     }

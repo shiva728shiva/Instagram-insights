@@ -167,24 +167,5 @@ fun FrameScrubVideoPreview(
                 modifier = Modifier.size(28.dp)
             )
         }
-
-        // Timestamp Badge at bottom
-        if (timeLabel.isNotBlank()) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(8.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(Color.Black.copy(alpha = 0.75f))
-                    .padding(horizontal = 6.dp, vertical = 2.dp)
-            ) {
-                Text(
-                    text = timeLabel,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
-        }
     }
 }

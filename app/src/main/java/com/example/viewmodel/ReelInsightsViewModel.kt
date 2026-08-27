@@ -147,7 +147,16 @@ class ReelInsightsViewModel : ViewModel() {
         shareRate: Float? = null,
         saveRate: Float? = null,
         repostRate: Float? = null,
-        commentRate: Float? = null
+        commentRate: Float? = null,
+        reelsTabPct: Float? = null,
+        explorePct: Float? = null,
+        profilePct: Float? = null,
+        feedPct: Float? = null,
+        followersAudiencePct: Float? = null,
+        nonFollowersAudiencePct: Float? = null,
+        countryDemographics: Map<String, Float>? = null,
+        ageDemographics: Map<String, Float>? = null,
+        genderDemographics: Map<String, Float>? = null
     ) {
         _data.update { current ->
             val updated = current.copy(
@@ -170,12 +179,72 @@ class ReelInsightsViewModel : ViewModel() {
                 shareRate = shareRate ?: current.shareRate,
                 saveRate = saveRate ?: current.saveRate,
                 repostRate = repostRate ?: current.repostRate,
-                commentRate = commentRate ?: current.commentRate
+                commentRate = commentRate ?: current.commentRate,
+                reelsTabPct = reelsTabPct ?: current.reelsTabPct,
+                explorePct = explorePct ?: current.explorePct,
+                profilePct = profilePct ?: current.profilePct,
+                feedPct = feedPct ?: current.feedPct,
+                followersAudiencePct = followersAudiencePct ?: current.followersAudiencePct,
+                nonFollowersAudiencePct = nonFollowersAudiencePct ?: current.nonFollowersAudiencePct,
+                countryDemographics = countryDemographics ?: current.countryDemographics,
+                ageDemographics = ageDemographics ?: current.ageDemographics,
+                genderDemographics = genderDemographics ?: current.genderDemographics
             )
             // Sync active reel
-            _activeReel.update { it.copy(insightsData = updated, viewsCount = updated.views, likesCount = updated.likes) }
+            _activeReel.update { it.copy(
+                caption = updated.caption,
+                insightsData = updated,
+                viewsCount = updated.views,
+                likesCount = updated.likes,
+                commentsCount = updated.comments,
+                resharesCount = updated.reshares,
+                sendsCount = updated.sends,
+                savesCount = updated.saves
+            ) }
             updated
         }
+    }
+
+    fun updateProfile(
+        username: String? = null,
+        fullName: String? = null,
+        avatarUrl: String? = null,
+        category: String? = null,
+        bio: String? = null,
+        postsCount: Int? = null,
+        followersCount: Int? = null,
+        followingCount: Int? = null
+    ) {
+        _userProfile.update { current ->
+            val updated = current.copy(
+                username = username ?: current.username,
+                fullName = fullName ?: current.fullName,
+                avatarUrl = avatarUrl ?: current.avatarUrl,
+                category = category ?: current.category,
+                bio = bio ?: current.bio,
+                postsCount = postsCount ?: current.postsCount,
+                followersCount = followersCount ?: current.followersCount,
+                followingCount = followingCount ?: current.followingCount
+            )
+            if (username != null) {
+                _data.update { it.copy(handle = username) }
+            }
+            if (avatarUrl != null) {
+                _data.update { it.copy(thumbnailUrl = avatarUrl) }
+            }
+            updated
+        }
+    }
+
+    fun updateActiveReelCaption(newCaption: String) {
+        _activeReel.update { it.copy(caption = newCaption) }
+        _data.update { it.copy(caption = newCaption) }
+    }
+
+    fun updateActiveReelAvatar(newAvatarUrl: String) {
+        _userProfile.update { it.copy(avatarUrl = newAvatarUrl) }
+        _activeReel.update { it.copy(thumbnailUrl = newAvatarUrl) }
+        _data.update { it.copy(thumbnailUrl = newAvatarUrl) }
     }
 
     fun resetToDefaults() {

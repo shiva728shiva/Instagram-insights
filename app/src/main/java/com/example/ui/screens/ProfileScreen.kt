@@ -77,6 +77,7 @@ fun ProfileScreen(
     onSelectReel: (ReelItem) -> Unit,
     onChangeUsernameClick: () -> Unit,
     onSelectVideoClick: () -> Unit = {},
+    onEditProfileClick: () -> Unit = onChangeUsernameClick,
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableIntStateOf(1) } // 0: Posts, 1: Reels (Default matching Screenshot 2), 2: Tagged
@@ -113,7 +114,7 @@ fun ProfileScreen(
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .clickable { onChangeUsernameClick() }
+                    .clickable { onEditProfileClick() }
                     .padding(horizontal = 8.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -140,7 +141,7 @@ fun ProfileScreen(
                     modifier = Modifier
                         .size(28.dp)
                         .clip(CircleShape)
-                        .clickable { },
+                        .clickable { onEditProfileClick() },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -152,7 +153,7 @@ fun ProfileScreen(
                 }
 
                 IconButton(
-                    onClick = { },
+                    onClick = { onEditProfileClick() },
                     modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
@@ -191,9 +192,10 @@ fun ProfileScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        // Avatar with Story ring and bubble note
+                        // Avatar with Story ring and bubble note (Clickable to edit profile)
                         Box(
-                            contentAlignment = Alignment.TopCenter
+                            contentAlignment = Alignment.TopCenter,
+                            modifier = Modifier.clickable { onEditProfileClick() }
                         ) {
                             // "Make this space yours..." note bubble
                             Box(
@@ -262,10 +264,11 @@ fun ProfileScreen(
                             }
                         }
 
-                        // Posts, Followers, Following Counters
+                        // Posts, Followers, Following Counters (Clickable to edit stats)
                         Row(
                             modifier = Modifier
                                 .weight(1f)
+                                .clickable { onEditProfileClick() }
                                 .padding(start = 24.dp),
                             horizontalArrangement = Arrangement.SpaceAround,
                             verticalAlignment = Alignment.CenterVertically
@@ -278,26 +281,32 @@ fun ProfileScreen(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // Name, Category, Bio
-                    Text(
-                        text = profile.fullName,
-                        fontSize = 14.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = IgTextPrimary
-                    )
-                    Text(
-                        text = profile.category,
-                        fontSize = 13.sp,
-                        color = IgTextMuted,
-                        modifier = Modifier.padding(top = 1.dp)
-                    )
-                    profile.bio.lines().forEach { line ->
+                    // Name, Category, Bio (Clickable to edit)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onEditProfileClick() }
+                    ) {
                         Text(
-                            text = line,
-                            fontSize = 13.sp,
-                            color = IgTextPrimary,
-                            lineHeight = 17.sp
+                            text = profile.fullName,
+                            fontSize = 14.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = IgTextPrimary
                         )
+                        Text(
+                            text = profile.category,
+                            fontSize = 13.sp,
+                            color = IgTextMuted,
+                            modifier = Modifier.padding(top = 1.dp)
+                        )
+                        profile.bio.lines().forEach { line ->
+                            Text(
+                                text = line,
+                                fontSize = 13.sp,
+                                color = IgTextPrimary,
+                                lineHeight = 17.sp
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -307,7 +316,7 @@ fun ProfileScreen(
                         modifier = Modifier
                             .clip(RoundedCornerShape(16.dp))
                             .background(Color(0xFF262626))
-                            .clickable { }
+                            .clickable { onEditProfileClick() }
                             .padding(horizontal = 10.dp, vertical = 5.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -333,7 +342,7 @@ fun ProfileScreen(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { },
+                            .clickable { onEditProfileClick() },
                         shape = RoundedCornerShape(10.dp),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E252D))
                     ) {
@@ -370,7 +379,7 @@ fun ProfileScreen(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Button(
-                            onClick = { onChangeUsernameClick() },
+                            onClick = { onEditProfileClick() },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF262626),
                                 contentColor = IgTextPrimary

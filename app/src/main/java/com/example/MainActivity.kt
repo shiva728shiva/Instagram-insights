@@ -21,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.ui.screens.EditDemographicsDialog
+import com.example.ui.screens.EditProfileDialog
 import com.example.ui.screens.EditorBottomSheet
 import com.example.ui.screens.InsightsScreen
 import com.example.ui.screens.ProfileScreen
@@ -60,6 +62,8 @@ fun ReelInsightsApp(
     val isEditorOpen by viewModel.isEditorOpen.collectAsStateWithLifecycle()
     val showUsernamePrompt by viewModel.showUsernamePrompt.collectAsStateWithLifecycle()
     var showVideoPickerPrompt by remember { mutableStateOf(false) }
+    var showEditProfileDialog by remember { mutableStateOf(false) }
+    var showEditDemographicsDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -81,10 +85,13 @@ fun ReelInsightsApp(
                             viewModel.selectReel(reel)
                         },
                         onChangeUsernameClick = {
-                            viewModel.setShowUsernamePrompt(true)
+                            showEditProfileDialog = true
                         },
                         onSelectVideoClick = {
                             showVideoPickerPrompt = true
+                        },
+                        onEditProfileClick = {
+                            showEditProfileDialog = true
                         }
                     )
                 }
@@ -112,10 +119,69 @@ fun ReelInsightsApp(
                         onViewsFilterSelect = { viewModel.setViewsFilter(it) },
                         onAudienceSubTabSelect = { viewModel.setAudienceSubTab(it) },
                         onBackClick = { viewModel.navigateTo(AppScreen.REEL_FEED) },
-                        onOpenEditor = { viewModel.setEditorOpen(true) }
+                        onOpenEditor = { viewModel.setEditorOpen(true) },
+                        onOpenDemographicsEditor = { showEditDemographicsDialog = true }
                     )
                 }
             }
+        }
+
+        // Edit Profile Dialog (Username, Bio, Full Name, Avatar URL, Stats)
+        if (showEditProfileDialog) {
+            EditProfileDialog(
+                profile = userProfile,
+                onDismiss = { showEditProfileDialog = false },
+                onSave = { username, fullName, avatarUrl, category, bio, posts, followers, following ->
+                    viewModel.updateProfile(
+                        username = username,
+                        fullName = fullName,
+                        avatarUrl = avatarUrl,
+                        category = category,
+                        bio = bio,
+                        postsCount = posts,
+                        followersCount = followers,
+                        followingCount = following
+                    )
+                }
+            )
+        }
+
+        // Edit Demographics Dialog (Country Demographics, Follower Ratio, Sources)
+        if (showEditDemographicsDialog) {
+            EditDemographicsDialog(
+                data = data,
+                onDismiss = { showEditDemographicsDialog = false },
+                onSave = { followersPct, nonFollowersPct, reelsTabPct, explorePct, profilePct, countryDemographics, genderDemographics ->
+                    viewModel.updateMetrics(
+                        caption = data.caption,
+                        handle = data.handle,
+                        views = data.views,
+                        viewers = data.viewers,
+                        avgWatchTime = data.avgWatchTime,
+                        follows = data.follows,
+                        likes = data.likes,
+                        comments = data.comments,
+                        reshares = data.reshares,
+                        sends = data.sends,
+                        saves = data.saves,
+                        skipRate = data.skipRate,
+                        skipRateQualifier = data.skipRateQualifier,
+                        likeRate = data.likeRate,
+                        likeRateQualifier = data.likeRateQualifier,
+                        shareRate = data.shareRate,
+                        saveRate = data.saveRate,
+                        repostRate = data.repostRate,
+                        commentRate = data.commentRate,
+                        reelsTabPct = reelsTabPct,
+                        explorePct = explorePct,
+                        profilePct = profilePct,
+                        followersAudiencePct = followersPct,
+                        nonFollowersAudiencePct = nonFollowersPct,
+                        countryDemographics = countryDemographics,
+                        genderDemographics = genderDemographics
+                    )
+                }
+            )
         }
 
         // Instagram Video Selection & Storage Permission Dialog
@@ -145,7 +211,7 @@ fun ReelInsightsApp(
                 data = data,
                 sheetState = sheetState,
                 onDismiss = { viewModel.setEditorOpen(false) },
-                onSave = { caption, handle, views, viewers, avgWatch, follows, likes, comments, reshares, sends, saves, skipRate, skipQualifier, likeRate, likeQualifier, shareRate, saveRate, repostRate, commentRate ->
+                onSave = { caption, handle, views, viewers, avgWatch, follows, likes, comments, reshares, sends, saves, skipRate, skipQualifier, likeRate, likeQualifier, shareRate, saveRate, repostRate, commentRate, reelsTabPct, explorePct, profilePct, feedPct, followersPct, nonFollowersPct, countryDemographics ->
                     viewModel.updateMetrics(
                         caption = caption,
                         handle = handle,
@@ -165,7 +231,14 @@ fun ReelInsightsApp(
                         shareRate = shareRate,
                         saveRate = saveRate,
                         repostRate = repostRate,
-                        commentRate = commentRate
+                        commentRate = commentRate,
+                        reelsTabPct = reelsTabPct,
+                        explorePct = explorePct,
+                        profilePct = profilePct,
+                        feedPct = feedPct,
+                        followersAudiencePct = followersPct,
+                        nonFollowersAudiencePct = nonFollowersPct,
+                        countryDemographics = countryDemographics
                     )
                 },
                 onReset = {

@@ -234,45 +234,6 @@ fun ReelPlayerScreen(
                 }
             }
 
-            // Watermark Badges (e.g. YouTube & Instagram handle pills)
-            Row(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .offset(y = 110.dp)
-                    .padding(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Color.Black.copy(alpha = 0.85f))
-                        .border(1.dp, Color.White, RoundedCornerShape(6.dp))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = "▶ CAMILLAARA",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Color.Black.copy(alpha = 0.85f))
-                        .border(1.dp, Color.White, RoundedCornerShape(6.dp))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = "📷 REALCAMILLAARA",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
-            }
-
             // Play/Pause Floating Icon Indicator
             if (!isPlaying) {
                 Box(
@@ -324,7 +285,10 @@ fun ReelPlayerScreen(
                 }
 
                 // Comment Button
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable { onOpenEditor() }
+                ) {
                     Icon(
                         imageVector = Icons.Outlined.ChatBubbleOutline,
                         contentDescription = "Comment",
@@ -373,20 +337,26 @@ fun ReelPlayerScreen(
                     imageVector = Icons.Default.MoreHoriz,
                     contentDescription = "More",
                     tint = Color.White,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable { onOpenEditor() }
                 )
             }
 
-            // Bottom-Left User Details & Caption Overlay
+            // Bottom-Left User Details & Caption Overlay (Clickable to edit username, avatar, or caption)
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .fillMaxWidth(0.78f)
                     .padding(start = 14.dp, bottom = 14.dp)
             ) {
-                // Avatar + Handle
+                // Avatar + Handle (Clickable to edit profile)
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { onOpenEditor() }
+                        .padding(vertical = 2.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -425,13 +395,16 @@ fun ReelPlayerScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Caption
+                // Caption (Clickable to edit caption)
                 Text(
                     text = reel.caption,
                     fontSize = 13.sp,
                     color = Color.White,
                     maxLines = 2,
-                    lineHeight = 16.sp
+                    lineHeight = 16.sp,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .clickable { onOpenEditor() }
                 )
             }
         }

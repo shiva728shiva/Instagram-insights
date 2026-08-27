@@ -78,8 +78,8 @@ object ProfileRepository {
                             likesCount = likes,
                             commentsCount = comments,
                             caption = media.caption ?: "Instagram Reel #${index + 1}",
-                            topOverlayText = if (index == 1) "Bellamy and Camilla talked for almost\n2 HOURS?! 😳" else (media.caption?.take(40) ?: "New Reel 🔥"),
-                            watermarks = listOf("TIKTOK @$realUsername", "INSTAGRAM @$realUsername"),
+                            topOverlayText = "",
+                            watermarks = emptyList(),
                             insightsData = reelInsights
                         )
                     }
@@ -162,8 +162,8 @@ object ProfileRepository {
                 sendsCount = 1,
                 savesCount = 0,
                 caption = "Live reaction to the craziest moment on stream today 🔴 #live #stream",
-                topOverlayText = "STREAM HIGHLIGHTS! 🔥",
-                watermarks = listOf("TIKTOK @$username", "INSTAGRAM @$username"),
+                topOverlayText = "",
+                watermarks = emptyList(),
                 insightsData = defaultInsights.copy(
                     views = 336,
                     viewers = 120,
@@ -182,8 +182,8 @@ object ProfileRepository {
                 sendsCount = 0,
                 savesCount = 0,
                 caption = "IG model @piperrockelle recently sparked attentio ...",
-                topOverlayText = "Bellamy and Camilla talked for almost\n2 HOURS?! 😳",
-                watermarks = listOf("TIKTOK @PIPERROCKELLE", "INSTAGRAM @PIPERROCKELLE"),
+                topOverlayText = "",
+                watermarks = emptyList(),
                 insightsData = defaultInsights
             ),
             ReelItem(
@@ -196,8 +196,8 @@ object ProfileRepository {
                 sendsCount = 0,
                 savesCount = 1,
                 caption = "Outfit of the day in pink sweater 🌸💫 #ootd #aesthetic",
-                topOverlayText = "Cozy vibes only ✨",
-                watermarks = listOf("TIKTOK @$username", "INSTAGRAM @$username"),
+                topOverlayText = "",
+                watermarks = emptyList(),
                 insightsData = defaultInsights.copy(
                     views = 160,
                     viewers = 85,
@@ -215,8 +215,8 @@ object ProfileRepository {
                 sendsCount = 3,
                 savesCount = 12,
                 caption = "Anime art portrait transformation process 🎨✨ #illustration #art",
-                topOverlayText = "Character design reveal ✨",
-                watermarks = listOf("TIKTOK @$username", "INSTAGRAM @$username"),
+                topOverlayText = "",
+                watermarks = emptyList(),
                 insightsData = defaultInsights.copy(
                     views = 2140,
                     viewers = 920,
@@ -235,8 +235,8 @@ object ProfileRepository {
                 sendsCount = 7,
                 savesCount = 24,
                 caption = "Studio lighting secret you need to know 💡 #creator #bts",
-                topOverlayText = "Game changer for creators! ⚡",
-                watermarks = listOf("TIKTOK @$username", "INSTAGRAM @$username"),
+                topOverlayText = "",
+                watermarks = emptyList(),
                 insightsData = defaultInsights.copy(
                     views = 4510,
                     viewers = 1840,
@@ -255,8 +255,8 @@ object ProfileRepository {
                 sendsCount = 2,
                 savesCount = 5,
                 caption = "Quick recap of the weekend event 🌇✨ #vlog #weekend",
-                topOverlayText = "Weekend dump! 📸",
-                watermarks = listOf("TIKTOK @$username", "INSTAGRAM @$username"),
+                topOverlayText = "",
+                watermarks = emptyList(),
                 insightsData = defaultInsights.copy(
                     views = 890,
                     viewers = 410,

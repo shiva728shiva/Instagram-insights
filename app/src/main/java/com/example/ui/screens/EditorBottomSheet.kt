@@ -78,7 +78,14 @@ fun EditorBottomSheet(
         shareRate: Float,
         saveRate: Float,
         repostRate: Float,
-        commentRate: Float
+        commentRate: Float,
+        reelsTabPct: Float,
+        explorePct: Float,
+        profilePct: Float,
+        feedPct: Float,
+        followersPct: Float,
+        nonFollowersPct: Float,
+        countryDemographics: Map<String, Float>
     ) -> Unit,
     onReset: () -> Unit,
     modifier: Modifier = Modifier
@@ -104,6 +111,21 @@ fun EditorBottomSheet(
     var saveRate by remember(data) { mutableStateOf(data.saveRate.toString()) }
     var repostRate by remember(data) { mutableStateOf(data.repostRate.toString()) }
     var commentRate by remember(data) { mutableStateOf(data.commentRate.toString()) }
+
+    var reelsTabPct by remember(data) { mutableStateOf(data.reelsTabPct.toString()) }
+    var explorePct by remember(data) { mutableStateOf(data.explorePct.toString()) }
+    var profilePct by remember(data) { mutableStateOf(data.profilePct.toString()) }
+    var feedPct by remember(data) { mutableStateOf(data.feedPct.toString()) }
+
+    var followersPct by remember(data) { mutableStateOf(data.followersAudiencePct.toString()) }
+    var nonFollowersPct by remember(data) { mutableStateOf(data.nonFollowersAudiencePct.toString()) }
+
+    var country1Name by remember(data) { mutableStateOf(data.countryDemographics.keys.elementAtOrNull(0) ?: "India") }
+    var country1Pct by remember(data) { mutableStateOf((data.countryDemographics.values.elementAtOrNull(0) ?: 44.0f).toString()) }
+    var country2Name by remember(data) { mutableStateOf(data.countryDemographics.keys.elementAtOrNull(1) ?: "United States") }
+    var country2Pct by remember(data) { mutableStateOf((data.countryDemographics.values.elementAtOrNull(1) ?: 4.0f).toString()) }
+    var country3Name by remember(data) { mutableStateOf(data.countryDemographics.keys.elementAtOrNull(2) ?: "Brazil") }
+    var country3Pct by remember(data) { mutableStateOf((data.countryDemographics.values.elementAtOrNull(2) ?: 4.0f).toString()) }
 
     val scrollState = rememberScrollState()
 
@@ -206,6 +228,39 @@ fun EditorBottomSheet(
                     CustomTextField(value = commentRate, onValueChange = { commentRate = it }, label = "Comment Rate %", isNumber = true, modifier = Modifier.weight(1f))
                 }
 
+                // Top Sources of Views
+                SectionLabel("TOP SOURCES OF VIEWS (%)")
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    CustomTextField(value = reelsTabPct, onValueChange = { reelsTabPct = it }, label = "Reels tab %", isNumber = true, modifier = Modifier.weight(1f))
+                    CustomTextField(value = explorePct, onValueChange = { explorePct = it }, label = "Explore %", isNumber = true, modifier = Modifier.weight(1f))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    CustomTextField(value = profilePct, onValueChange = { profilePct = it }, label = "Profile %", isNumber = true, modifier = Modifier.weight(1f))
+                    CustomTextField(value = feedPct, onValueChange = { feedPct = it }, label = "Feed %", isNumber = true, modifier = Modifier.weight(1f))
+                }
+
+                // Audience: Who viewed your reel (Ratio)
+                SectionLabel("AUDIENCE: WHO VIEWED YOUR REEL (RATIO %)")
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    CustomTextField(value = followersPct, onValueChange = { followersPct = it }, label = "Followers %", isNumber = true, modifier = Modifier.weight(1f))
+                    CustomTextField(value = nonFollowersPct, onValueChange = { nonFollowersPct = it }, label = "Non-followers %", isNumber = true, modifier = Modifier.weight(1f))
+                }
+
+                // Audience: Country Demographics
+                SectionLabel("AUDIENCE: TOP COUNTRIES (%)")
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    CustomTextField(value = country1Name, onValueChange = { country1Name = it }, label = "Country 1", modifier = Modifier.weight(1.5f))
+                    CustomTextField(value = country1Pct, onValueChange = { country1Pct = it }, label = "%", isNumber = true, modifier = Modifier.weight(1f))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    CustomTextField(value = country2Name, onValueChange = { country2Name = it }, label = "Country 2", modifier = Modifier.weight(1.5f))
+                    CustomTextField(value = country2Pct, onValueChange = { country2Pct = it }, label = "%", isNumber = true, modifier = Modifier.weight(1f))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    CustomTextField(value = country3Name, onValueChange = { country3Name = it }, label = "Country 3", modifier = Modifier.weight(1.5f))
+                    CustomTextField(value = country3Pct, onValueChange = { country3Pct = it }, label = "%", isNumber = true, modifier = Modifier.weight(1f))
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
@@ -214,6 +269,11 @@ fun EditorBottomSheet(
             // Save and Apply Button
             Button(
                 onClick = {
+                    val countryMap = linkedMapOf<String, Float>()
+                    if (country1Name.isNotBlank()) countryMap[country1Name.trim()] = country1Pct.toFloatOrNull() ?: 44f
+                    if (country2Name.isNotBlank()) countryMap[country2Name.trim()] = country2Pct.toFloatOrNull() ?: 4f
+                    if (country3Name.isNotBlank()) countryMap[country3Name.trim()] = country3Pct.toFloatOrNull() ?: 4f
+
                     onSave(
                         caption,
                         handle,
@@ -233,7 +293,14 @@ fun EditorBottomSheet(
                         shareRate.toFloatOrNull() ?: data.shareRate,
                         saveRate.toFloatOrNull() ?: data.saveRate,
                         repostRate.toFloatOrNull() ?: data.repostRate,
-                        commentRate.toFloatOrNull() ?: data.commentRate
+                        commentRate.toFloatOrNull() ?: data.commentRate,
+                        reelsTabPct.toFloatOrNull() ?: data.reelsTabPct,
+                        explorePct.toFloatOrNull() ?: data.explorePct,
+                        profilePct.toFloatOrNull() ?: data.profilePct,
+                        feedPct.toFloatOrNull() ?: data.feedPct,
+                        followersPct.toFloatOrNull() ?: data.followersAudiencePct,
+                        nonFollowersPct.toFloatOrNull() ?: data.nonFollowersAudiencePct,
+                        countryMap
                     )
                     onDismiss()
                 },
