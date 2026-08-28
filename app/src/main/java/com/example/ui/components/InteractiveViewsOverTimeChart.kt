@@ -252,18 +252,6 @@ fun InteractiveViewsOverTimeChart(
                     pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f), 0f)
                 )
 
-                // White glowing dot on the pink line
-                drawCircle(
-                    color = IgMagenta,
-                    radius = 7.dp.toPx(),
-                    center = coords
-                )
-                drawCircle(
-                    color = Color.White,
-                    radius = 4.dp.toPx(),
-                    center = coords
-                )
-
                 // Tooltip background pill
                 drawRoundRect(
                     color = IgTooltipBg,
