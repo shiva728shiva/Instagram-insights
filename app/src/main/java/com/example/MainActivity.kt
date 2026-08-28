@@ -104,6 +104,9 @@ fun ReelInsightsApp(
                         onOpenEditor = { viewModel.setEditorOpen(true) },
                         onSelectVideoClick = {
                             showVideoPickerPrompt = true
+                        },
+                        onUpdateAvatar = { uri ->
+                            viewModel.updateProfile(avatarUrl = uri)
                         }
                     )
                 }
@@ -211,7 +214,7 @@ fun ReelInsightsApp(
                 data = data,
                 sheetState = sheetState,
                 onDismiss = { viewModel.setEditorOpen(false) },
-                onSave = { caption, handle, views, viewers, avgWatch, follows, likes, comments, reshares, sends, saves, skipRate, skipQualifier, likeRate, likeQualifier, shareRate, saveRate, repostRate, commentRate, reelsTabPct, explorePct, profilePct, feedPct, followersPct, nonFollowersPct, countryDemographics ->
+                onSave = { caption, handle, views, viewers, avgWatch, follows, likes, comments, reshares, sends, saves, skipRate, skipQualifier, likeRate, likeQualifier, shareRate, saveRate, repostRate, commentRate, reelsTabPct, explorePct, profilePct, feedPct, followersPct, nonFollowersPct, countryDemographics, chartStartDate, chartMidDate, chartEndDate ->
                     viewModel.updateMetrics(
                         caption = caption,
                         handle = handle,
@@ -238,7 +241,10 @@ fun ReelInsightsApp(
                         feedPct = feedPct,
                         followersAudiencePct = followersPct,
                         nonFollowersAudiencePct = nonFollowersPct,
-                        countryDemographics = countryDemographics
+                        countryDemographics = countryDemographics,
+                        viewsOverTimeStartDate = chartStartDate,
+                        viewsOverTimeMidDate = chartMidDate,
+                        viewsOverTimeEndDate = chartEndDate
                     )
                 },
                 onReset = {

@@ -152,40 +152,28 @@ fun FrameScrubVideoPreview(
             }
         }
 
-        // Instagram Hollow Outlined Play Icon / Pause Icon (Only shown on graph preview when showPlayIcon is true)
+        // Instagram Hollow Outlined Play Icon (Only shown on graph preview when showPlayIcon is true)
         if (showPlayIcon && !isPlaying) {
             androidx.compose.foundation.Canvas(
-                modifier = Modifier
-                    .size(44.dp)
+                modifier = Modifier.size(46.dp)
             ) {
                 val cx = size.width / 2
                 val cy = size.height / 2
-                val r = size.width * 0.38f
+                val r = size.width * 0.36f
 
                 val playPath = androidx.compose.ui.graphics.Path().apply {
-                    moveTo(cx - r * 0.62f, cy - r * 0.82f)
-                    lineTo(cx + r * 0.88f, cy)
-                    lineTo(cx - r * 0.62f, cy + r * 0.82f)
+                    moveTo(cx - r * 0.55f, cy - r * 0.78f)
+                    lineTo(cx + r * 0.85f, cy)
+                    lineTo(cx - r * 0.55f, cy + r * 0.78f)
                     close()
                 }
 
-                // Black outline/shadow for contrast
+                // Pure crisp hollow white outline with rounded joins and caps (no black border)
                 drawPath(
                     path = playPath,
-                    color = Color.Black.copy(alpha = 0.65f),
+                    color = Color.White.copy(alpha = 0.95f),
                     style = androidx.compose.ui.graphics.drawscope.Stroke(
-                        width = 5.dp.toPx(),
-                        cap = androidx.compose.ui.graphics.StrokeCap.Round,
-                        join = androidx.compose.ui.graphics.StrokeJoin.Round
-                    )
-                )
-
-                // White crisp hollow outline
-                drawPath(
-                    path = playPath,
-                    color = Color.White,
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(
-                        width = 3.dp.toPx(),
+                        width = 2.6.dp.toPx(),
                         cap = androidx.compose.ui.graphics.StrokeCap.Round,
                         join = androidx.compose.ui.graphics.StrokeJoin.Round
                     )

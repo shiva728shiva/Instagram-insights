@@ -28,21 +28,49 @@ object HealthyGraphGenerator {
     fun generateViewsOverTime(
         totalViews: Int,
         typicalRatio: Float = 0.32f,
-        daysCount: Int = 12
+        daysCount: Int = 12,
+        customStartLabel: String? = null,
+        customMidLabel: String? = null,
+        customEndLabel: String? = null
     ): List<ViewDataPoint> {
         val safeTotal = totalViews.coerceAtLeast(10).toFloat()
         val typicalPeak = (safeTotal * typicalRatio).coerceAtLeast(4f)
 
-        // Generate date labels going back from today (e.g., Aug 17 ... Aug 28)
         val dateFormat = SimpleDateFormat("MMM d", Locale.US)
         val calendar = Calendar.getInstance()
-        // Offset so that day 9 is roughly today, 10-11 are next days
-        calendar.add(Calendar.DAY_OF_MONTH, -(daysCount - 3))
 
-        val dates = (0 until daysCount).map {
-            val dateStr = dateFormat.format(calendar.time)
-            calendar.add(Calendar.DAY_OF_MONTH, 1)
-            dateStr
+        if (!customStartLabel.isNullOrBlank()) {
+            try {
+                val parsed = dateFormat.parse(customStartLabel.trim())
+                if (parsed != null) {
+                    val calTemp = Calendar.getInstance()
+                    val curYear = calTemp.get(Calendar.YEAR)
+                    calTemp.time = parsed
+                    calTemp.set(Calendar.YEAR, curYear)
+                    calendar.time = calTemp.time
+                } else {
+                    calendar.add(Calendar.DAY_OF_MONTH, -(daysCount - 3))
+                }
+            } catch (e: Exception) {
+                calendar.add(Calendar.DAY_OF_MONTH, -(daysCount - 3))
+            }
+        } else {
+            // Offset so that day 9 is roughly today, 10-11 are next days
+            calendar.add(Calendar.DAY_OF_MONTH, -(daysCount - 3))
+        }
+
+        val dates = (0 until daysCount).map { i ->
+            if (i == 0 && !customStartLabel.isNullOrBlank()) {
+                customStartLabel.trim()
+            } else if (i == 6 && !customMidLabel.isNullOrBlank()) {
+                customMidLabel.trim()
+            } else if (i == daysCount - 1 && !customEndLabel.isNullOrBlank()) {
+                customEndLabel.trim()
+            } else {
+                val dateStr = dateFormat.format(calendar.time)
+                calendar.add(Calendar.DAY_OF_MONTH, 1)
+                dateStr
+            }
         }
 
         // Percentage milestones along the 12-day lifecycle

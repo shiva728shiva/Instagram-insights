@@ -85,7 +85,10 @@ fun EditorBottomSheet(
         feedPct: Float,
         followersPct: Float,
         nonFollowersPct: Float,
-        countryDemographics: Map<String, Float>
+        countryDemographics: Map<String, Float>,
+        chartStartDate: String,
+        chartMidDate: String,
+        chartEndDate: String
     ) -> Unit,
     onReset: () -> Unit,
     modifier: Modifier = Modifier
@@ -96,6 +99,10 @@ fun EditorBottomSheet(
     var viewers by remember(data) { mutableStateOf(data.viewers.toString()) }
     var avgWatch by remember(data) { mutableStateOf(data.avgWatchTime) }
     var follows by remember(data) { mutableStateOf(data.follows.toString()) }
+
+    var chartStartDate by remember(data) { mutableStateOf(data.viewsOverTime.firstOrNull()?.dateLabel ?: "Aug 17") }
+    var chartMidDate by remember(data) { mutableStateOf(data.viewsOverTime.getOrNull(6)?.dateLabel ?: "Aug 23") }
+    var chartEndDate by remember(data) { mutableStateOf(data.viewsOverTime.lastOrNull()?.dateLabel ?: "Aug 28") }
 
     var likes by remember(data) { mutableStateOf(data.likes.toString()) }
     var comments by remember(data) { mutableStateOf(data.comments.toString()) }
@@ -250,6 +257,14 @@ fun EditorBottomSheet(
                     CustomTextField(value = nonFollowersPct, onValueChange = { nonFollowersPct = it }, label = "Non-followers %", isNumber = true, modifier = Modifier.weight(1f))
                 }
 
+                // Views Over Time Dates (Graph 1)
+                SectionLabel("VIEWS OVER TIME GRAPH DATES")
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    CustomTextField(value = chartStartDate, onValueChange = { chartStartDate = it }, label = "Start Date", modifier = Modifier.weight(1f))
+                    CustomTextField(value = chartMidDate, onValueChange = { chartMidDate = it }, label = "Mid Date", modifier = Modifier.weight(1f))
+                    CustomTextField(value = chartEndDate, onValueChange = { chartEndDate = it }, label = "End Date", modifier = Modifier.weight(1f))
+                }
+
                 // Audience: Country Demographics (5 countries)
                 SectionLabel("AUDIENCE: TOP COUNTRIES (%)")
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -314,7 +329,10 @@ fun EditorBottomSheet(
                         feedPct.toFloatOrNull() ?: data.feedPct,
                         followersPct.toFloatOrNull() ?: data.followersAudiencePct,
                         nonFollowersPct.toFloatOrNull() ?: data.nonFollowersAudiencePct,
-                        countryMap
+                        countryMap,
+                        chartStartDate,
+                        chartMidDate,
+                        chartEndDate
                     )
                     onDismiss()
                 },

@@ -52,8 +52,8 @@ fun InteractiveRetentionChart(
                 .fillMaxSize()
                 .pointerInput(retentionPoints) {
                     detectTapGestures { offset ->
-                        val leftPadding = 75f
-                        val rightPadding = 20f
+                        val leftPadding = 120f
+                        val rightPadding = 24f
                         val chartWidth = size.width - leftPadding - rightPadding
                         val relX = (offset.x - leftPadding).coerceIn(0f, chartWidth)
                         val step = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
@@ -65,8 +65,8 @@ fun InteractiveRetentionChart(
                 .pointerInput(retentionPoints) {
                     detectDragGestures(
                         onDragStart = { offset ->
-                            val leftPadding = 75f
-                            val rightPadding = 20f
+                            val leftPadding = 120f
+                            val rightPadding = 24f
                             val chartWidth = size.width - leftPadding - rightPadding
                             val relX = (offset.x - leftPadding).coerceIn(0f, chartWidth)
                             val step = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
@@ -76,8 +76,8 @@ fun InteractiveRetentionChart(
                         },
                         onDrag = { change, _ ->
                             change.consume()
-                            val leftPadding = 75f
-                            val rightPadding = 20f
+                            val leftPadding = 120f
+                            val rightPadding = 24f
                             val chartWidth = size.width - leftPadding - rightPadding
                             val relX = (change.position.x - leftPadding).coerceIn(0f, chartWidth)
                             val step = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
@@ -91,16 +91,16 @@ fun InteractiveRetentionChart(
             val width = size.width
             val height = size.height
 
-            val leftPadding = 75f // Space for 100%, 50%, 0% text on left
-            val rightPadding = 20f
+            val leftPadding = 120f // Generous space so line starts comfortably away from 100%
+            val rightPadding = 24f
             val topPadding = 45f
-            val bottomPadding = 30f
+            val bottomPadding = 40f
 
             val chartWidth = width - leftPadding - rightPadding
             val chartHeight = height - topPadding - bottomPadding
 
             val textPaint = android.graphics.Paint().apply {
-                color = android.graphics.Color.parseColor("#999999")
+                color = android.graphics.Color.parseColor("#9E9EA4")
                 textSize = 28f
                 isAntiAlias = true
                 textAlign = android.graphics.Paint.Align.LEFT
@@ -112,10 +112,10 @@ fun InteractiveRetentionChart(
                 Triple(0.5f, "50%", topPadding + 0.5f * chartHeight),
                 Triple(1f, "0%", topPadding + chartHeight)
             ).forEach { (_, label, yPos) ->
-                // Draw Label on the left
+                // Draw Label on the left with clean spacing from gridline
                 drawContext.canvas.nativeCanvas.drawText(
                     label,
-                    4f,
+                    8f,
                     yPos + 8f,
                     textPaint
                 )
@@ -130,6 +130,34 @@ fun InteractiveRetentionChart(
             }
 
             if (retentionPoints.isEmpty()) return@Canvas
+
+            // Bottom axis time labels: 0:00 (start) and total duration (end)
+            val startTime = retentionPoints.firstOrNull()?.timeLabel ?: "0:00"
+            val endTime = retentionPoints.lastOrNull()?.timeLabel ?: "0:08"
+
+            val timePaint = android.graphics.Paint().apply {
+                color = android.graphics.Color.parseColor("#9E9EA4")
+                textSize = 26f
+                isAntiAlias = true
+            }
+
+            // Left timestamp
+            timePaint.textAlign = android.graphics.Paint.Align.LEFT
+            drawContext.canvas.nativeCanvas.drawText(
+                startTime,
+                leftPadding,
+                height - 6f,
+                timePaint
+            )
+
+            // Right timestamp
+            timePaint.textAlign = android.graphics.Paint.Align.RIGHT
+            drawContext.canvas.nativeCanvas.drawText(
+                endTime,
+                width - rightPadding,
+                height - 6f,
+                timePaint
+            )
 
             val stepX = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
 

@@ -53,7 +53,7 @@ fun MetricProgressBar(
             text = label,
             fontSize = 14.5.sp,
             fontWeight = FontWeight.Normal,
-            color = IgTextPrimary,
+            color = Color.White,
             modifier = Modifier.padding(bottom = 6.dp)
         )
 
@@ -86,10 +86,10 @@ fun MetricProgressBar(
                 ShimmerBox(width = 42.dp, height = 14.dp)
             } else {
                 Text(
-                    text = String.format("%.1f%%", percent),
+                    text = String.format(java.util.Locale.US, "%.1f%%", percent),
                     fontSize = 14.5.sp,
                     fontWeight = FontWeight.Medium,
-                    color = IgTextSecondary,
+                    color = Color.White,
                     textAlign = TextAlign.End,
                     modifier = Modifier.width(52.dp)
                 )

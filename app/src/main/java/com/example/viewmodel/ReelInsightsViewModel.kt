@@ -157,16 +157,25 @@ class ReelInsightsViewModel : ViewModel() {
         nonFollowersAudiencePct: Float? = null,
         countryDemographics: Map<String, Float>? = null,
         ageDemographics: Map<String, Float>? = null,
-        genderDemographics: Map<String, Float>? = null
+        genderDemographics: Map<String, Float>? = null,
+        viewsOverTimeStartDate: String? = null,
+        viewsOverTimeMidDate: String? = null,
+        viewsOverTimeEndDate: String? = null
     ) {
         _data.update { current ->
             val newViews = views ?: current.views
             val newLikes = likes ?: current.likes
             val viewsChanged = views != null && views != current.views
+            val datesChanged = !viewsOverTimeStartDate.isNullOrBlank() || !viewsOverTimeMidDate.isNullOrBlank() || !viewsOverTimeEndDate.isNullOrBlank()
 
-            // Compute healthy graphs and metrics if views changed or if graphs need refresh
-            val healthyViewsOverTime = if (viewsChanged) {
-                HealthyGraphGenerator.generateViewsOverTime(totalViews = newViews)
+            // Compute healthy graphs and metrics if views changed or if graphs need refresh or dates changed
+            val healthyViewsOverTime = if (viewsChanged || datesChanged) {
+                HealthyGraphGenerator.generateViewsOverTime(
+                    totalViews = newViews,
+                    customStartLabel = viewsOverTimeStartDate ?: current.viewsOverTime.firstOrNull()?.dateLabel,
+                    customMidLabel = viewsOverTimeMidDate ?: current.viewsOverTime.getOrNull(6)?.dateLabel,
+                    customEndLabel = viewsOverTimeEndDate ?: current.viewsOverTime.lastOrNull()?.dateLabel
+                )
             } else current.viewsOverTime
 
             val durationSec = ((current.videoDurationMs / 1000L).toInt()).coerceIn(4, 60)

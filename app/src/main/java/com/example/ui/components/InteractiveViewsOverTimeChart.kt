@@ -218,28 +218,6 @@ fun InteractiveViewsOverTimeChart(
                 val activePoint = dataPoints[selectedIndex]
                 val coords = getCoordinates(selectedIndex, activePoint.viewsThisReel)
 
-                // Vertical dashed guide line connecting from top/bottom to data point
-                drawLine(
-                    color = Color(0xFF6E6E73),
-                    start = Offset(coords.x, topPadding - 10f),
-                    end = Offset(coords.x, height - bottomPadding),
-                    strokeWidth = 1.5.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f), 0f)
-                )
-
-                // White glowing dot on the pink line
-                drawCircle(
-                    color = IgMagenta,
-                    radius = 7.dp.toPx(),
-                    center = coords
-                )
-                drawCircle(
-                    color = Color.White,
-                    radius = 4.dp.toPx(),
-                    center = coords
-                )
-
-                // Tooltip bubble at the top: e.g. "1,379" (top) and "Aug 20" (bottom)
                 val rawVal = (activePoint.viewsThisReel * animatedFactor).toInt()
                 val displayViews = String.format(java.util.Locale.US, "%,d", rawVal)
                 val dateLabel = activePoint.dateLabel
@@ -264,6 +242,27 @@ fun InteractiveViewsOverTimeChart(
                 val bubbleHeight = 62f
                 val bubbleX = (coords.x - bubbleWidth / 2).coerceIn(10f, width - bubbleWidth - 10f)
                 val bubbleY = 4f
+
+                // Vertical dashed guide line connecting from tooltip arrow down to 0 baseline
+                drawLine(
+                    color = Color(0xFF9E9EA4),
+                    start = Offset(coords.x, bubbleY + bubbleHeight + 8f),
+                    end = Offset(coords.x, topPadding + chartHeight),
+                    strokeWidth = 1.5.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f), 0f)
+                )
+
+                // White glowing dot on the pink line
+                drawCircle(
+                    color = IgMagenta,
+                    radius = 7.dp.toPx(),
+                    center = coords
+                )
+                drawCircle(
+                    color = Color.White,
+                    radius = 4.dp.toPx(),
+                    center = coords
+                )
 
                 // Tooltip background pill
                 drawRoundRect(

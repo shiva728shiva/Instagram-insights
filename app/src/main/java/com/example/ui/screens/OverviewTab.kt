@@ -487,9 +487,9 @@ fun FilterPill(
     ) {
         Text(
             text = label,
-            fontSize = 13.sp,
+            fontSize = 13.5.sp,
             fontWeight = FontWeight.SemiBold,
-            color = if (isSelected) Color.White else IgTextSecondary
+            color = if (isSelected) Color.White else Color.White.copy(alpha = 0.85f)
         )
     }
 }

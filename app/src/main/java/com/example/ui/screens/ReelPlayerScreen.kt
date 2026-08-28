@@ -2,6 +2,8 @@ package com.example.ui.screens
 
 import android.net.Uri
 import android.widget.VideoView
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -31,6 +33,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -44,7 +47,6 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RemoveRedEye
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.VideoLibrary
-import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -84,6 +86,7 @@ fun ReelPlayerScreen(
     onOpenInsights: () -> Unit,
     onOpenEditor: () -> Unit,
     onSelectVideoClick: () -> Unit = {},
+    onUpdateAvatar: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var isPlaying by remember { mutableStateOf(true) }
@@ -92,6 +95,15 @@ fun ReelPlayerScreen(
     var isSaved by remember { mutableStateOf(false) }
     var videoViewRef by remember { mutableStateOf<VideoView?>(null) }
     var showUploadedToast by remember { mutableStateOf(true) }
+
+    // Launcher for selecting profile photo from phone gallery directly
+    val galleryAvatarLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            onUpdateAvatar(it.toString())
+        }
+    }
 
     // "Original video uploaded ⚡" banner fades out cleanly after initial 0.5s
     LaunchedEffect(Unit) {
@@ -193,14 +205,15 @@ fun ReelPlayerScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(280.dp)
+                    .height(330.dp)
                     .align(Alignment.BottomCenter)
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
                                 Color.Transparent,
-                                Color.Black.copy(alpha = 0.45f),
-                                Color.Black.copy(alpha = 0.85f)
+                                Color.Black.copy(alpha = 0.35f),
+                                Color.Black.copy(alpha = 0.75f),
+                                Color.Black.copy(alpha = 0.95f)
                             )
                         )
                     )
@@ -323,11 +336,11 @@ fun ReelPlayerScreen(
         }
 
         // 3. Right-Side Action Icons Column (Heart, Comment, Repost, Share, Bookmark, More)
-        // Positioned safely with end = 16.dp padding so NO icon is cut off!
+        // Positioned safely with end = 16.dp padding and rounded icon styling
         Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = 80.dp),
+                .padding(end = 16.dp, bottom = 86.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -354,16 +367,16 @@ fun ReelPlayerScreen(
                 )
             }
 
-            // 2. Comment Button (Chat bubble)
+            // 2. Comment Button (Instagram comment bubble)
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.clickable { onOpenEditor() }
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.ChatBubbleOutline,
+                    imageVector = Icons.AutoMirrored.Filled.Comment,
                     contentDescription = "Comment",
                     tint = Color.White,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(26.dp)
                 )
                 Text(
                     text = if (reel.commentsCount > 0) reel.commentsCount.toString() else "0",
@@ -427,19 +440,18 @@ fun ReelPlayerScreen(
             )
         }
 
-        // 4. Bottom-Left Username + Avatar (Gradient Ring) + Caption Row
+        // 4. Bottom-Left Username + Avatar (Gallery Photo Picker) + Caption Row
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .fillMaxWidth(0.74f)
-                .padding(start = 16.dp, bottom = 80.dp)
+                .padding(start = 16.dp, bottom = 86.dp)
         ) {
-            // Avatar with Instagram Story gradient ring + Username
+            // Avatar with Instagram Story gradient ring + Username (Click avatar to pick photo from gallery)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .clickable { onOpenEditor() }
                     .padding(vertical = 2.dp)
             ) {
                 Box(
@@ -458,10 +470,13 @@ fun ReelPlayerScreen(
                         )
                         .padding(2.dp)
                         .clip(CircleShape)
+                        .clickable {
+                            galleryAvatarLauncher.launch("image/*")
+                        }
                 ) {
                     AsyncImage(
                         model = reel.insightsData.thumbnailUrl,
-                        contentDescription = "Avatar",
+                        contentDescription = "Avatar (Tap to change from gallery)",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -473,7 +488,8 @@ fun ReelPlayerScreen(
                     text = reel.insightsData.handle.ifBlank { "alishaasassy" },
                     fontSize = 14.5.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = Color.White,
+                    modifier = Modifier.clickable { onOpenEditor() }
                 )
             }
 
