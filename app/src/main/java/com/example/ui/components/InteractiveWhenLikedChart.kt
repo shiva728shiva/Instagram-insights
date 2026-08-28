@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -33,10 +34,12 @@ import com.example.ui.theme.IgTooltipBg
 @Composable
 fun InteractiveWhenLikedChart(
     likePoints: List<Float>,
-    selectedIndex: Int = 0,
+    selectedIndex: Int? = null,
     onIndexChange: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    var isTouching by remember { mutableStateOf(false) }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -54,20 +57,34 @@ fun InteractiveWhenLikedChart(
                         val relX = (offset.x - leftPadding).coerceIn(0f, chartWidth)
                         val step = chartWidth / (likePoints.size - 1).coerceAtLeast(1)
                         val index = (relX / step).toInt().coerceIn(0, likePoints.size - 1)
+                        isTouching = true
                         onIndexChange(index)
                     }
                 }
                 .pointerInput(likePoints) {
-                    detectDragGestures { change, _ ->
-                        change.consume()
-                        val leftPadding = 40f
-                        val rightPadding = 40f
-                        val chartWidth = size.width - leftPadding - rightPadding
-                        val relX = (change.position.x - leftPadding).coerceIn(0f, chartWidth)
-                        val step = chartWidth / (likePoints.size - 1).coerceAtLeast(1)
-                        val index = (relX / step).toInt().coerceIn(0, likePoints.size - 1)
-                        onIndexChange(index)
-                    }
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            val leftPadding = 40f
+                            val rightPadding = 40f
+                            val chartWidth = size.width - leftPadding - rightPadding
+                            val relX = (offset.x - leftPadding).coerceIn(0f, chartWidth)
+                            val step = chartWidth / (likePoints.size - 1).coerceAtLeast(1)
+                            val index = (relX / step).toInt().coerceIn(0, likePoints.size - 1)
+                            isTouching = true
+                            onIndexChange(index)
+                        },
+                        onDrag = { change, _ ->
+                            change.consume()
+                            val leftPadding = 40f
+                            val rightPadding = 40f
+                            val chartWidth = size.width - leftPadding - rightPadding
+                            val relX = (change.position.x - leftPadding).coerceIn(0f, chartWidth)
+                            val step = chartWidth / (likePoints.size - 1).coerceAtLeast(1)
+                            val index = (relX / step).toInt().coerceIn(0, likePoints.size - 1)
+                            isTouching = true
+                            onIndexChange(index)
+                        }
+                    )
                 }
         ) {
             val width = size.width
@@ -124,19 +141,27 @@ fun InteractiveWhenLikedChart(
                 )
             )
 
-            // 3. Draw active point
-            if (selectedIndex in likePoints.indices) {
-                val activeVal = likePoints[selectedIndex]
-                val coords = getCoords(selectedIndex, activeVal)
+            // 3. Draw active scrubber line & tooltip when user touches/scrubs
+            val activeIdx = selectedIndex
+            if (activeIdx != null && activeIdx in likePoints.indices && (isTouching || selectedIndex != null)) {
+                val activeVal = likePoints[activeIdx]
+                val coords = getCoords(activeIdx, activeVal)
 
+                val bubbleWidth = 100f
+                val bubbleHeight = 44f
+                val bubbleX = (coords.x - bubbleWidth / 2).coerceIn(10f, width - bubbleWidth - 10f)
+                val bubbleY = 4f
+
+                // Vertical dashed guide line from tooltip down to bottom grid line
                 drawLine(
-                    color = Color(0xFF6E6E73),
-                    start = Offset(coords.x, topPadding - 10f),
-                    end = Offset(coords.x, height - bottomPadding),
+                    color = Color(0xFF9E9EA4),
+                    start = Offset(coords.x, bubbleY + bubbleHeight + 7f),
+                    end = Offset(coords.x, topPadding + chartHeight),
                     strokeWidth = 1.5.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f), 0f)
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f), 0f)
                 )
 
+                // White glowing dot on the pink line
                 drawCircle(
                     color = IgMagenta,
                     radius = 7.dp.toPx(),
@@ -147,12 +172,6 @@ fun InteractiveWhenLikedChart(
                     radius = 4.dp.toPx(),
                     center = coords
                 )
-
-                val timeStr = "0:${selectedIndex.toString().padStart(2, '0')}"
-                val bubbleWidth = 100f
-                val bubbleHeight = 44f
-                val bubbleX = (coords.x - bubbleWidth / 2).coerceIn(10f, width - bubbleWidth - 10f)
-                val bubbleY = 4f
 
                 drawRoundRect(
                     color = IgTooltipBg,
@@ -170,6 +189,7 @@ fun InteractiveWhenLikedChart(
                 }
                 drawPath(arrowPath, color = IgTooltipBg)
 
+                val timeStr = "0:${activeIdx.toString().padStart(2, '0')}"
                 drawContext.canvas.nativeCanvas.apply {
                     val p = android.graphics.Paint().apply {
                         color = android.graphics.Color.WHITE
