@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -109,6 +110,7 @@ fun EngagementTab(
         Spacer(modifier = Modifier.height(14.dp))
 
         var selectedLikeIndex by remember(data.whenLiked) { mutableIntStateOf(0) }
+        var isLikeScrubbing by remember { mutableStateOf(false) }
         val likeTimeLabel = com.example.data.VideoMediaManager.formatTimeLabel(selectedLikeIndex)
 
         // Centered Video Thumbnail (9:16 Portrait Dimension) & Frame-Synced Scrubbing
@@ -120,7 +122,8 @@ fun EngagementTab(
                 videoUri = data.videoUri,
                 thumbnailUrl = data.thumbnailUrl,
                 scrubSecond = selectedLikeIndex,
-                timeLabel = likeTimeLabel
+                timeLabel = likeTimeLabel,
+                showPlayIcon = !isLikeScrubbing
             )
         }
 
@@ -134,6 +137,9 @@ fun EngagementTab(
                 selectedIndex = selectedLikeIndex,
                 onIndexChange = { newIndex ->
                     selectedLikeIndex = newIndex
+                },
+                onInteractingChange = { isInteracting ->
+                    isLikeScrubbing = isInteracting
                 }
             )
         }

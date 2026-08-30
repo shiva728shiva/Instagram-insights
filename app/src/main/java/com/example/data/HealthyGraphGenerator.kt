@@ -129,31 +129,26 @@ object HealthyGraphGenerator {
      */
     fun generateRetentionCurve(
         durationSeconds: Int = 8,
-        totalViews: Int = 1379
+        totalViews: Int = 1379,
+        avgWatchTimeSec: Float = 6.8f,
+        skipRatePercent: Float = 11.2f
     ): List<RetentionPoint> {
         val totalSec = durationSeconds.coerceIn(4, 90)
-        val retentionPoints = mutableListOf<RetentionPoint>()
+        val dropPoint = (avgWatchTimeSec / totalSec.toFloat()).coerceIn(0.15f, 0.85f)
+        val dropSteepness = 7f + (skipRatePercent / 100f) * 18f
 
-        // Exponential decay constant tuned for healthy engagement
-        val k = if (totalViews > 2000) 0.14 else 0.18
-
-        for (sec in 0..totalSec) {
-            val label = formatTimeLabel(sec)
-            val pct = when (sec) {
-                0 -> 100.0f
-                1 -> 98.0f
-                2 -> 95.5f
-                3 -> 92.0f
-                else -> {
-                    val rawDecay = 100.0 * exp(-k * sec)
-                    val floorPct = if (totalViews > 5000) 28.0 else 16.0
-                    (rawDecay + floorPct * (1.0 - sec.toDouble() / totalSec)).coerceIn(14.0, 90.0).toFloat()
-                }
-            }
-            retentionPoints.add(RetentionPoint(label, pct.roundToSingleDecimal()))
+        val raw = (0..totalSec).map { sec ->
+            val t = sec.toFloat() / totalSec.toFloat()
+            val decay = 1f / (1f + exp(dropSteepness * (t - dropPoint)))
+            val floor = if (totalViews > 3000) 24f else 18f
+            (floor + (100f - floor) * decay).coerceIn(12f, 100f)
         }
 
-        return retentionPoints
+        return (0..totalSec).map { sec ->
+            val label = formatTimeLabel(sec)
+            val pct = raw[sec]
+            RetentionPoint(label, pct.roundToSingleDecimal())
+        }
     }
 
     /**
@@ -167,7 +162,7 @@ object HealthyGraphGenerator {
         val count = (durationSeconds + 1).coerceIn(8, 24)
         val peakIndex = (count * 0.35f).toInt().coerceIn(1, count - 2)
 
-        return (0 until count).map { i ->
+        val raw = (0 until count).map { i ->
             val distFromPeak = kotlin.math.abs(i - peakIndex).toFloat()
             val base = 100f - (distFromPeak * 18f)
             when {
@@ -178,6 +173,7 @@ object HealthyGraphGenerator {
                 else -> base.coerceIn(10f, 85f)
             }
         }
+        return raw
     }
 
     /**

@@ -37,6 +37,7 @@ fun InteractiveRetentionChart(
     retentionPoints: List<RetentionPoint>,
     selectedIndex: Int? = null,
     onIndexChange: (Int) -> Unit = {},
+    onInteractingChange: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var isTouching by remember { mutableStateOf(false) }
@@ -51,16 +52,22 @@ fun InteractiveRetentionChart(
             modifier = Modifier
                 .fillMaxSize()
                 .pointerInput(retentionPoints) {
-                    detectTapGestures { offset ->
-                        val leftPadding = 120f
-                        val rightPadding = 24f
-                        val chartWidth = size.width - leftPadding - rightPadding
-                        val relX = (offset.x - leftPadding).coerceIn(0f, chartWidth)
-                        val step = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
-                        val index = (relX / step).toInt().coerceIn(0, retentionPoints.size - 1)
-                        isTouching = true
-                        onIndexChange(index)
-                    }
+                    detectTapGestures(
+                        onPress = { offset ->
+                            isTouching = true
+                            onInteractingChange(true)
+                            val leftPadding = 120f
+                            val rightPadding = 24f
+                            val chartWidth = size.width - leftPadding - rightPadding
+                            val relX = (offset.x - leftPadding).coerceIn(0f, chartWidth)
+                            val step = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
+                            val index = (relX / step).toInt().coerceIn(0, retentionPoints.size - 1)
+                            onIndexChange(index)
+                            tryAwaitRelease()
+                            isTouching = false
+                            onInteractingChange(false)
+                        }
+                    )
                 }
                 .pointerInput(retentionPoints) {
                     detectDragGestures(
@@ -72,7 +79,16 @@ fun InteractiveRetentionChart(
                             val step = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
                             val index = (relX / step).toInt().coerceIn(0, retentionPoints.size - 1)
                             isTouching = true
+                            onInteractingChange(true)
                             onIndexChange(index)
+                        },
+                        onDragEnd = {
+                            isTouching = false
+                            onInteractingChange(false)
+                        },
+                        onDragCancel = {
+                            isTouching = false
+                            onInteractingChange(false)
                         },
                         onDrag = { change, _ ->
                             change.consume()
@@ -83,6 +99,7 @@ fun InteractiveRetentionChart(
                             val step = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
                             val index = (relX / step).toInt().coerceIn(0, retentionPoints.size - 1)
                             isTouching = true
+                            onInteractingChange(true)
                             onIndexChange(index)
                         }
                     )
@@ -131,34 +148,6 @@ fun InteractiveRetentionChart(
 
             if (retentionPoints.isEmpty()) return@Canvas
 
-            // Bottom axis time labels: 0:00 (start) and total duration (end)
-            val startTime = retentionPoints.firstOrNull()?.timeLabel ?: "0:00"
-            val endTime = retentionPoints.lastOrNull()?.timeLabel ?: "0:08"
-
-            val timePaint = android.graphics.Paint().apply {
-                color = android.graphics.Color.parseColor("#9E9EA4")
-                textSize = 26f
-                isAntiAlias = true
-            }
-
-            // Left timestamp
-            timePaint.textAlign = android.graphics.Paint.Align.LEFT
-            drawContext.canvas.nativeCanvas.drawText(
-                startTime,
-                leftPadding,
-                height - 6f,
-                timePaint
-            )
-
-            // Right timestamp
-            timePaint.textAlign = android.graphics.Paint.Align.RIGHT
-            drawContext.canvas.nativeCanvas.drawText(
-                endTime,
-                width - rightPadding,
-                height - 6f,
-                timePaint
-            )
-
             val stepX = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
 
             fun getCoords(index: Int, percent: Float): Offset {
@@ -167,26 +156,12 @@ fun InteractiveRetentionChart(
                 return Offset(x, y)
             }
 
-            // 2. Draw smooth Retention line (Instagram Magenta)
-            val path = Path()
-            retentionPoints.forEachIndexed { i, p ->
-                val point = getCoords(i, p.percent)
-                if (i == 0) path.moveTo(point.x, point.y)
-                else {
-                    val prevPoint = getCoords(i - 1, retentionPoints[i - 1].percent)
-                    val cx = (prevPoint.x + point.x) / 2
-                    path.cubicTo(cx, prevPoint.y, cx, point.y, point.x, point.y)
-                }
-            }
-
-            drawPath(
-                path = path,
+            // 2. Draw smooth Retention line (Instagram Magenta) using drawSmoothLine
+            val points = retentionPoints.mapIndexed { i, p -> getCoords(i, p.percent) }
+            drawSmoothLine(
+                points = points,
                 color = IgMagenta,
-                style = Stroke(
-                    width = 3.dp.toPx(),
-                    cap = StrokeCap.Round,
-                    join = StrokeJoin.Round
-                )
+                strokeWidth = 3.dp.toPx()
             )
 
             // 3. Draw active scrubber line & tooltip when user touches/scrubs

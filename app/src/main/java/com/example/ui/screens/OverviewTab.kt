@@ -183,16 +183,20 @@ fun OverviewTab(
             )
         }
 
-        // Bottom Date Labels: Aug 17, Aug 23, Aug 28
+        // Bottom Date Labels: dynamically sourced from viewsOverTime data
+        val firstDate = data.viewsOverTime.firstOrNull()?.dateLabel ?: "Aug 17"
+        val midDate = data.viewsOverTime.getOrNull(data.viewsOverTime.size / 2)?.dateLabel ?: "Aug 23"
+        val lastDate = data.viewsOverTime.lastOrNull()?.dateLabel ?: "Aug 28"
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 38.dp, end = 16.dp, top = 2.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = "Aug 17", fontSize = 11.sp, color = IgTextFaint)
-            Text(text = "Aug 23", fontSize = 11.sp, color = IgTextFaint)
-            Text(text = "Aug 28", fontSize = 11.sp, color = IgTextFaint)
+            Text(text = firstDate, fontSize = 11.sp, color = IgTextFaint)
+            Text(text = midDate, fontSize = 11.sp, color = IgTextFaint)
+            Text(text = lastDate, fontSize = 11.sp, color = IgTextFaint)
         }
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -306,6 +310,7 @@ fun OverviewTab(
         Spacer(modifier = Modifier.height(14.dp))
 
         var selectedRetentionIndex by remember(data.retention) { mutableStateOf<Int?>(null) }
+        var isRetentionScrubbing by remember { mutableStateOf(false) }
         val activeRetentionPoint = selectedRetentionIndex?.let { data.retention.getOrNull(it) }
         val scrubTimeLabel = activeRetentionPoint?.timeLabel ?: "0:00"
 
@@ -319,7 +324,7 @@ fun OverviewTab(
                 thumbnailUrl = data.thumbnailUrl,
                 scrubSecond = selectedRetentionIndex ?: 0,
                 timeLabel = scrubTimeLabel,
-                showPlayIcon = true
+                showPlayIcon = !isRetentionScrubbing
             )
         }
 
@@ -333,6 +338,9 @@ fun OverviewTab(
                 selectedIndex = selectedRetentionIndex,
                 onIndexChange = { newIndex ->
                     selectedRetentionIndex = newIndex
+                },
+                onInteractingChange = { isInteracting ->
+                    isRetentionScrubbing = isInteracting
                 }
             )
         }

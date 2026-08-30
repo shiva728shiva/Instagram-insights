@@ -136,7 +136,7 @@ fun FrameScrubVideoPreview(
                 }
             }
         } else {
-            // Exact Scrubbed Frame or Thumbnail
+            // Exact Scrubbed Frame or Thumbnail with graceful dark fallback
             if (currentFrameBitmap != null) {
                 Image(
                     bitmap = currentFrameBitmap!!.asImageBitmap(),
@@ -146,7 +146,10 @@ fun FrameScrubVideoPreview(
                 )
             } else if (thumbnailUrl.isNotBlank()) {
                 AsyncImage(
-                    model = thumbnailUrl,
+                    model = coil.request.ImageRequest.Builder(context)
+                        .data(thumbnailUrl)
+                        .crossfade(true)
+                        .build(),
                     contentDescription = "Video Preview",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
@@ -154,19 +157,19 @@ fun FrameScrubVideoPreview(
             }
         }
 
-        // Instagram Hollow Outlined Play Icon with smooth rounded corners
+        // Instagram Hollow Outlined Play Icon with smooth rounded corners (compact & refined)
         if (showPlayIcon && !isPlaying) {
             androidx.compose.foundation.Canvas(
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(34.dp)
             ) {
                 val cx = size.width / 2
                 val cy = size.height / 2
 
-                val v1 = Offset(cx - 15.dp.toPx(), cy - 19.dp.toPx()) // top-left
-                val v2 = Offset(cx + 20.dp.toPx(), cy)                 // right tip
-                val v3 = Offset(cx - 15.dp.toPx(), cy + 19.dp.toPx()) // bottom-left
+                val v1 = Offset(cx - 10.dp.toPx(), cy - 13.dp.toPx()) // top-left
+                val v2 = Offset(cx + 13.5.dp.toPx(), cy)               // right tip
+                val v3 = Offset(cx - 10.dp.toPx(), cy + 13.dp.toPx()) // bottom-left
 
-                val cr = 5.5.dp.toPx()
+                val cr = 3.6.dp.toPx()
 
                 val d12 = kotlin.math.hypot((v2.x - v1.x).toDouble(), (v2.y - v1.y).toDouble()).toFloat()
                 val u12 = Offset((v2.x - v1.x) / d12, (v2.y - v1.y) / d12)
@@ -179,8 +182,8 @@ fun FrameScrubVideoPreview(
                 val p1In = Offset(v1.x, v1.y + cr)
                 val p1Out = v1 + u12 * cr
 
-                val p2In = v2 + u21 * (cr * 1.4f)
-                val p2Out = v2 + u23 * (cr * 1.4f)
+                val p2In = v2 + u21 * (cr * 1.3f)
+                val p2Out = v2 + u23 * (cr * 1.3f)
 
                 val p3In = v3 + u32 * cr
                 val p3Out = Offset(v3.x, v3.y - cr)
@@ -201,7 +204,7 @@ fun FrameScrubVideoPreview(
                     path = playPath,
                     color = Color.White.copy(alpha = 0.95f),
                     style = androidx.compose.ui.graphics.drawscope.Stroke(
-                        width = 2.8.dp.toPx(),
+                        width = 2.4.dp.toPx(),
                         cap = androidx.compose.ui.graphics.StrokeCap.Round,
                         join = androidx.compose.ui.graphics.StrokeJoin.Round
                     )

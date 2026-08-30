@@ -36,6 +36,7 @@ fun InteractiveWhenLikedChart(
     likePoints: List<Float>,
     selectedIndex: Int? = null,
     onIndexChange: (Int) -> Unit = {},
+    onInteractingChange: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var isTouching by remember { mutableStateOf(false) }
@@ -50,16 +51,22 @@ fun InteractiveWhenLikedChart(
             modifier = Modifier
                 .fillMaxSize()
                 .pointerInput(likePoints) {
-                    detectTapGestures { offset ->
-                        val leftPadding = 40f
-                        val rightPadding = 40f
-                        val chartWidth = size.width - leftPadding - rightPadding
-                        val relX = (offset.x - leftPadding).coerceIn(0f, chartWidth)
-                        val step = chartWidth / (likePoints.size - 1).coerceAtLeast(1)
-                        val index = (relX / step).toInt().coerceIn(0, likePoints.size - 1)
-                        isTouching = true
-                        onIndexChange(index)
-                    }
+                    detectTapGestures(
+                        onPress = { offset ->
+                            isTouching = true
+                            onInteractingChange(true)
+                            val leftPadding = 40f
+                            val rightPadding = 40f
+                            val chartWidth = size.width - leftPadding - rightPadding
+                            val relX = (offset.x - leftPadding).coerceIn(0f, chartWidth)
+                            val step = chartWidth / (likePoints.size - 1).coerceAtLeast(1)
+                            val index = (relX / step).toInt().coerceIn(0, likePoints.size - 1)
+                            onIndexChange(index)
+                            tryAwaitRelease()
+                            isTouching = false
+                            onInteractingChange(false)
+                        }
+                    )
                 }
                 .pointerInput(likePoints) {
                     detectDragGestures(
@@ -71,7 +78,16 @@ fun InteractiveWhenLikedChart(
                             val step = chartWidth / (likePoints.size - 1).coerceAtLeast(1)
                             val index = (relX / step).toInt().coerceIn(0, likePoints.size - 1)
                             isTouching = true
+                            onInteractingChange(true)
                             onIndexChange(index)
+                        },
+                        onDragEnd = {
+                            isTouching = false
+                            onInteractingChange(false)
+                        },
+                        onDragCancel = {
+                            isTouching = false
+                            onInteractingChange(false)
                         },
                         onDrag = { change, _ ->
                             change.consume()
@@ -82,6 +98,7 @@ fun InteractiveWhenLikedChart(
                             val step = chartWidth / (likePoints.size - 1).coerceAtLeast(1)
                             val index = (relX / step).toInt().coerceIn(0, likePoints.size - 1)
                             isTouching = true
+                            onInteractingChange(true)
                             onIndexChange(index)
                         }
                     )
@@ -119,26 +136,12 @@ fun InteractiveWhenLikedChart(
                 return Offset(x, y)
             }
 
-            // 2. Draw line path
-            val path = Path()
-            likePoints.forEachIndexed { i, raw ->
-                val point = getCoords(i, raw)
-                if (i == 0) path.moveTo(point.x, point.y)
-                else {
-                    val prevPoint = getCoords(i - 1, likePoints[i - 1])
-                    val cx = (prevPoint.x + point.x) / 2
-                    path.cubicTo(cx, prevPoint.y, cx, point.y, point.x, point.y)
-                }
-            }
-
-            drawPath(
-                path = path,
+            // 2. Draw line path with smooth Catmull-Rom/midpoint curve
+            val points = likePoints.mapIndexed { i, raw -> getCoords(i, raw) }
+            drawSmoothLine(
+                points = points,
                 color = IgMagenta,
-                style = Stroke(
-                    width = 3.dp.toPx(),
-                    cap = StrokeCap.Round,
-                    join = StrokeJoin.Round
-                )
+                strokeWidth = 3.dp.toPx()
             )
 
             // 3. Draw active scrubber line & tooltip when user touches/scrubs

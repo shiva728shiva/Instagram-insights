@@ -170,47 +170,25 @@ fun InteractiveViewsOverTimeChart(
                 return Offset(x, y)
             }
 
-            // 2. Draw "Your typical reel" line (dashed gray)
-            val typicalPath = Path()
-            dataPoints.forEachIndexed { i, dp ->
-                val point = getCoordinates(i, dp.viewsTypical)
-                if (i == 0) typicalPath.moveTo(point.x, point.y)
-                else typicalPath.lineTo(point.x, point.y)
+            // 2. Draw "Your typical reel" line (dashed gray) with smooth curves
+            val typicalPoints = dataPoints.mapIndexed { i, dp ->
+                getCoordinates(i, dp.viewsTypical)
             }
-
-            drawPath(
-                path = typicalPath,
+            drawSmoothLine(
+                points = typicalPoints,
                 color = IgChartTypicalLine,
-                style = Stroke(
-                    width = 2.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 10f), 0f),
-                    cap = StrokeCap.Round
-                )
+                strokeWidth = 2.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 10f), 0f)
             )
 
             // 3. Draw "This reel" line (vibrant magenta/pink) - only up to valid data points
-            val thisReelPath = Path()
-            var firstPoint = true
-            dataPoints.forEachIndexed { i, dp ->
-                if (dp.viewsThisReel >= 0f) {
-                    val point = getCoordinates(i, dp.viewsThisReel)
-                    if (firstPoint) {
-                        thisReelPath.moveTo(point.x, point.y)
-                        firstPoint = false
-                    } else {
-                        thisReelPath.lineTo(point.x, point.y)
-                    }
-                }
+            val validThisReelPoints = dataPoints.mapIndexedNotNull { i, dp ->
+                if (dp.viewsThisReel >= 0f) getCoordinates(i, dp.viewsThisReel) else null
             }
-
-            drawPath(
-                path = thisReelPath,
+            drawSmoothLine(
+                points = validThisReelPoints,
                 color = IgMagenta,
-                style = Stroke(
-                    width = 3.2.dp.toPx(),
-                    cap = StrokeCap.Round,
-                    join = StrokeJoin.Round
-                )
+                strokeWidth = 3.2.dp.toPx()
             )
 
             // 4. Draw Interactive Scrubber / Pointer Tooltip if user touched/scrubbed
