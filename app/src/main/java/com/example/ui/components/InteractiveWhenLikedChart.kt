@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.ui.theme.IgChartGrid
 import com.example.ui.theme.IgMagenta
 import com.example.ui.theme.IgTooltipBg
@@ -144,52 +145,44 @@ fun InteractiveWhenLikedChart(
                 strokeWidth = 3.dp.toPx()
             )
 
-            // 3. Draw active scrubber line & tooltip when user touches/scrubs
+            // 3. Draw active scrubber vertical line & tooltip when user touches/scrubs
             val activeIdx = selectedIndex
             if (activeIdx != null && activeIdx in likePoints.indices && (isTouching || selectedIndex != null)) {
                 val activeVal = likePoints[activeIdx]
                 val coords = getCoords(activeIdx, activeVal)
 
-                val bubbleWidth = 100f
-                val bubbleHeight = 44f
-                val bubbleX = (coords.x - bubbleWidth / 2).coerceIn(10f, width - bubbleWidth - 10f)
-                val bubbleY = 4f
+                val bubbleWidth = 52.dp.toPx()
+                val bubbleHeight = 32.dp.toPx()
+                val bubbleX = (coords.x - bubbleWidth / 2).coerceIn(leftPadding, width - rightPadding - bubbleWidth)
+                val bubbleY = 4.dp.toPx()
 
-                // Vertical dashed guide line from tooltip down to bottom grid line
+                // Vertical dashed guide line from bottom of tooltip down across chart
                 drawLine(
-                    color = Color(0xFF9E9EA4),
-                    start = Offset(coords.x, bubbleY + bubbleHeight + 7f),
+                    color = Color.White.copy(alpha = 0.55f),
+                    start = Offset(coords.x, bubbleY + bubbleHeight),
                     end = Offset(coords.x, topPadding + chartHeight),
-                    strokeWidth = 1.5.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f), 0f)
+                    strokeWidth = 1.3.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 4.5.dp.toPx()), 0f)
                 )
 
+                // Dark rounded rectangular pill tooltip matching Instagram
                 drawRoundRect(
-                    color = IgTooltipBg,
+                    color = Color(0xFF1E232B),
                     topLeft = Offset(bubbleX, bubbleY),
                     size = Size(bubbleWidth, bubbleHeight),
-                    cornerRadius = CornerRadius(12f, 12f)
+                    cornerRadius = CornerRadius(10.dp.toPx(), 10.dp.toPx())
                 )
-
-                val arrowPath = Path().apply {
-                    val arrowCenterX = coords.x.coerceIn(bubbleX + 12f, bubbleX + bubbleWidth - 12f)
-                    moveTo(arrowCenterX - 7f, bubbleY + bubbleHeight)
-                    lineTo(arrowCenterX + 7f, bubbleY + bubbleHeight)
-                    lineTo(arrowCenterX, bubbleY + bubbleHeight + 7f)
-                    close()
-                }
-                drawPath(arrowPath, color = IgTooltipBg)
 
                 val timeStr = "0:${activeIdx.toString().padStart(2, '0')}"
                 drawContext.canvas.nativeCanvas.apply {
                     val p = android.graphics.Paint().apply {
                         color = android.graphics.Color.WHITE
-                        textSize = 26f
-                        isFakeBoldText = true
+                        textSize = 13.sp.toPx()
+                        typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
                         isAntiAlias = true
                         textAlign = android.graphics.Paint.Align.CENTER
                     }
-                    drawText(timeStr, bubbleX + bubbleWidth / 2, bubbleY + 28f, p)
+                    drawText(timeStr, bubbleX + bubbleWidth / 2, bubbleY + 20.dp.toPx(), p)
                 }
             }
         }

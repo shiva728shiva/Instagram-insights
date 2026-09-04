@@ -27,7 +27,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -111,6 +115,8 @@ fun EngagementTab(
 
         var selectedLikeIndex by remember(data.whenLiked) { mutableIntStateOf(0) }
         var isLikeScrubbing by remember { mutableStateOf(false) }
+        val coroutineScope = rememberCoroutineScope()
+        var playIconDelayJob by remember { mutableStateOf<Job?>(null) }
         val likeTimeLabel = com.example.data.VideoMediaManager.formatTimeLabel(selectedLikeIndex)
 
         // Centered Video Thumbnail (9:16 Portrait Dimension) & Frame-Synced Scrubbing
@@ -139,7 +145,16 @@ fun EngagementTab(
                     selectedLikeIndex = newIndex
                 },
                 onInteractingChange = { isInteracting ->
-                    isLikeScrubbing = isInteracting
+                    playIconDelayJob?.cancel()
+                    if (isInteracting) {
+                        isLikeScrubbing = true
+                    } else {
+                        // Keep play icon hidden for 2 seconds after user releases touch
+                        playIconDelayJob = coroutineScope.launch {
+                            delay(2000L)
+                            isLikeScrubbing = false
+                        }
+                    }
                 }
             )
         }

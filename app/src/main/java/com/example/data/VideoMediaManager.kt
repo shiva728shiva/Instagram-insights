@@ -98,11 +98,23 @@ object VideoMediaManager {
     ): ReelItem {
         val durationSec = videoInfo.durationSeconds.coerceAtLeast(4)
         val initialViews = 1840
+        val initialViewers = 1360
         val initialLikes = 68
 
-        val retentionList = HealthyGraphGenerator.generateRetentionCurve(durationSeconds = durationSec, totalViews = initialViews)
-        val likePoints = HealthyGraphGenerator.generateWhenLiked(durationSeconds = durationSec, likesCount = initialLikes)
-        val viewsOverTimeList = HealthyGraphGenerator.generateViewsOverTime(totalViews = initialViews)
+        val retentionList = HealthyGraphGenerator.generateRetentionCurve(
+            durationSeconds = durationSec,
+            totalViews = initialViews,
+            viewersCount = initialViewers
+        )
+        val likePoints = HealthyGraphGenerator.generateWhenLiked(
+            durationSeconds = durationSec,
+            likesCount = initialLikes,
+            totalViews = initialViews
+        )
+        val viewsOverTimeList = HealthyGraphGenerator.generateViewsOverTime(
+            totalViews = initialViews,
+            viewersCount = initialViewers
+        )
 
         val insights = ReelInsightsData(
             caption = "My uploaded reel video 🎬🔥 #viral #reels",

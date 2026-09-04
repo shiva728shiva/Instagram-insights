@@ -217,41 +217,31 @@ fun InteractiveViewsOverTimeChart(
 
                 val textWidth = pViews.measureText(displayViews)
                 val bubbleWidth = maxOf(110f, textWidth + 36f)
-                val bubbleHeight = 62f
-                val bubbleX = (coords.x - bubbleWidth / 2).coerceIn(10f, width - bubbleWidth - 10f)
-                val bubbleY = 4f
+                val bubbleHeight = 38.dp.toPx()
+                val bubbleX = (coords.x - bubbleWidth / 2).coerceIn(leftPadding - 10.dp.toPx(), width - bubbleWidth - 10.dp.toPx())
+                val bubbleY = 4.dp.toPx()
 
-                // Vertical dashed guide line connecting from tooltip arrow down to 0 baseline
+                // Vertical dashed guide line connecting from bottom of tooltip down to 0 baseline
                 drawLine(
-                    color = Color(0xFF9E9EA4),
-                    start = Offset(coords.x, bubbleY + bubbleHeight + 8f),
+                    color = Color.White.copy(alpha = 0.55f),
+                    start = Offset(coords.x, bubbleY + bubbleHeight),
                     end = Offset(coords.x, topPadding + chartHeight),
-                    strokeWidth = 1.5.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f), 0f)
+                    strokeWidth = 1.3.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 4.5.dp.toPx()), 0f)
                 )
 
                 // Tooltip background pill
                 drawRoundRect(
-                    color = IgTooltipBg,
+                    color = Color(0xFF1E232B),
                     topLeft = Offset(bubbleX, bubbleY),
                     size = Size(bubbleWidth, bubbleHeight),
-                    cornerRadius = CornerRadius(14f, 14f)
+                    cornerRadius = CornerRadius(12.dp.toPx(), 12.dp.toPx())
                 )
-
-                // Small arrow pointer triangle under the tooltip
-                val arrowPath = Path().apply {
-                    val arrowCenterX = coords.x.coerceIn(bubbleX + 14f, bubbleX + bubbleWidth - 14f)
-                    moveTo(arrowCenterX - 8f, bubbleY + bubbleHeight)
-                    lineTo(arrowCenterX + 8f, bubbleY + bubbleHeight)
-                    lineTo(arrowCenterX, bubbleY + bubbleHeight + 8f)
-                    close()
-                }
-                drawPath(arrowPath, color = IgTooltipBg)
 
                 // Draw 2 lines of text
                 drawContext.canvas.nativeCanvas.apply {
-                    drawText(displayViews, bubbleX + bubbleWidth / 2, bubbleY + 26f, pViews)
-                    drawText(dateLabel, bubbleX + bubbleWidth / 2, bubbleY + 50f, pDate)
+                    drawText(displayViews, bubbleX + bubbleWidth / 2, bubbleY + 16.5.dp.toPx(), pViews)
+                    drawText(dateLabel, bubbleX + bubbleWidth / 2, bubbleY + 31.5.dp.toPx(), pDate)
                 }
             }
         }

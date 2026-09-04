@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.data.model.RetentionPoint
 import com.example.ui.theme.IgChartGrid
 import com.example.ui.theme.IgMagenta
@@ -56,8 +57,8 @@ fun InteractiveRetentionChart(
                         onPress = { offset ->
                             isTouching = true
                             onInteractingChange(true)
-                            val leftPadding = 120f
-                            val rightPadding = 24f
+                            val leftPadding = 48.dp.toPx()
+                            val rightPadding = 14.dp.toPx()
                             val chartWidth = size.width - leftPadding - rightPadding
                             val relX = (offset.x - leftPadding).coerceIn(0f, chartWidth)
                             val step = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
@@ -72,8 +73,8 @@ fun InteractiveRetentionChart(
                 .pointerInput(retentionPoints) {
                     detectDragGestures(
                         onDragStart = { offset ->
-                            val leftPadding = 120f
-                            val rightPadding = 24f
+                            val leftPadding = 48.dp.toPx()
+                            val rightPadding = 14.dp.toPx()
                             val chartWidth = size.width - leftPadding - rightPadding
                             val relX = (offset.x - leftPadding).coerceIn(0f, chartWidth)
                             val step = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
@@ -92,8 +93,8 @@ fun InteractiveRetentionChart(
                         },
                         onDrag = { change, _ ->
                             change.consume()
-                            val leftPadding = 120f
-                            val rightPadding = 24f
+                            val leftPadding = 48.dp.toPx()
+                            val rightPadding = 14.dp.toPx()
                             val chartWidth = size.width - leftPadding - rightPadding
                             val relX = (change.position.x - leftPadding).coerceIn(0f, chartWidth)
                             val step = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
@@ -108,17 +109,17 @@ fun InteractiveRetentionChart(
             val width = size.width
             val height = size.height
 
-            val leftPadding = 120f // Generous space so line starts comfortably away from 100%
-            val rightPadding = 24f
-            val topPadding = 45f
-            val bottomPadding = 40f
+            val leftPadding = 48.dp.toPx()
+            val rightPadding = 14.dp.toPx()
+            val topPadding = 34.dp.toPx()
+            val bottomPadding = 30.dp.toPx()
 
             val chartWidth = width - leftPadding - rightPadding
             val chartHeight = height - topPadding - bottomPadding
 
             val textPaint = android.graphics.Paint().apply {
                 color = android.graphics.Color.parseColor("#9E9EA4")
-                textSize = 28f
+                textSize = 12.sp.toPx()
                 isAntiAlias = true
                 textAlign = android.graphics.Paint.Align.LEFT
             }
@@ -132,8 +133,8 @@ fun InteractiveRetentionChart(
                 // Draw Label on the left with clean spacing from gridline
                 drawContext.canvas.nativeCanvas.drawText(
                     label,
-                    8f,
-                    yPos + 8f,
+                    4.dp.toPx(),
+                    yPos + 4.dp.toPx(),
                     textPaint
                 )
 
@@ -148,6 +149,32 @@ fun InteractiveRetentionChart(
 
             if (retentionPoints.isEmpty()) return@Canvas
 
+            // Bottom time labels (e.g. 0:00 on left, 0:08 on right)
+            val startTimeLabel = retentionPoints.firstOrNull()?.timeLabel ?: "0:00"
+            val endTimeLabel = retentionPoints.lastOrNull()?.timeLabel ?: "0:08"
+
+            val timeLabelPaint = android.graphics.Paint().apply {
+                color = android.graphics.Color.parseColor("#9E9EA4")
+                textSize = 12.sp.toPx()
+                isAntiAlias = true
+            }
+
+            timeLabelPaint.textAlign = android.graphics.Paint.Align.LEFT
+            drawContext.canvas.nativeCanvas.drawText(
+                startTimeLabel,
+                leftPadding,
+                topPadding + chartHeight + 20.dp.toPx(),
+                timeLabelPaint
+            )
+
+            timeLabelPaint.textAlign = android.graphics.Paint.Align.RIGHT
+            drawContext.canvas.nativeCanvas.drawText(
+                endTimeLabel,
+                width - rightPadding,
+                topPadding + chartHeight + 20.dp.toPx(),
+                timeLabelPaint
+            )
+
             val stepX = chartWidth / (retentionPoints.size - 1).coerceAtLeast(1)
 
             fun getCoords(index: Int, percent: Float): Offset {
@@ -156,73 +183,63 @@ fun InteractiveRetentionChart(
                 return Offset(x, y)
             }
 
-            // 2. Draw smooth Retention line (Instagram Magenta) using drawSmoothLine
+            // 2. Draw smooth Retention line (Instagram Magenta)
             val points = retentionPoints.mapIndexed { i, p -> getCoords(i, p.percent) }
             drawSmoothLine(
                 points = points,
                 color = IgMagenta,
-                strokeWidth = 3.dp.toPx()
+                strokeWidth = 2.8.dp.toPx()
             )
 
-            // 3. Draw active scrubber line & tooltip when user touches/scrubs
+            // 3. Draw active scrubber vertical line & tooltip when user touches/scrubs
             val activeIdx = selectedIndex
             if (activeIdx != null && activeIdx in retentionPoints.indices && (isTouching || selectedIndex != null)) {
                 val activePoint = retentionPoints[activeIdx]
                 val coords = getCoords(activeIdx, activePoint.percent)
 
-                val bubbleWidth = 114f
-                val bubbleHeight = 60f
-                val bubbleX = (coords.x - bubbleWidth / 2).coerceIn(10f, width - bubbleWidth - 10f)
-                val bubbleY = 4f
+                val bubbleWidth = 56.dp.toPx()
+                val bubbleHeight = 38.dp.toPx()
+                val bubbleX = (coords.x - bubbleWidth / 2).coerceIn(leftPadding, width - rightPadding - bubbleWidth)
+                val bubbleY = 2.dp.toPx()
 
-                // Vertical dashed guide line from tooltip pointer down to 0% line
+                // Vertical dashed guide line from bottom of tooltip down across chart to 0% line
                 drawLine(
-                    color = Color(0xFF9E9EA4),
-                    start = Offset(coords.x, bubbleY + bubbleHeight + 8f),
+                    color = Color.White.copy(alpha = 0.55f),
+                    start = Offset(coords.x, bubbleY + bubbleHeight),
                     end = Offset(coords.x, topPadding + chartHeight),
-                    strokeWidth = 1.5.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f), 0f)
+                    strokeWidth = 1.3.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 4.5.dp.toPx()), 0f)
                 )
 
-                // Tooltip background rounded rectangle
+                // Clean dark rounded rectangular pill tooltip matching Instagram
                 drawRoundRect(
-                    color = IgTooltipBg,
+                    color = Color(0xFF1E232B),
                     topLeft = Offset(bubbleX, bubbleY),
                     size = Size(bubbleWidth, bubbleHeight),
-                    cornerRadius = CornerRadius(12f, 12f)
+                    cornerRadius = CornerRadius(12.dp.toPx(), 12.dp.toPx())
                 )
 
-                // Pointer triangle pointing straight down to dashed line
-                val arrowPath = Path().apply {
-                    val arrowCenterX = coords.x.coerceIn(bubbleX + 14f, bubbleX + bubbleWidth - 14f)
-                    moveTo(arrowCenterX - 7f, bubbleY + bubbleHeight)
-                    lineTo(arrowCenterX + 7f, bubbleY + bubbleHeight)
-                    lineTo(arrowCenterX, bubbleY + bubbleHeight + 8f)
-                    close()
-                }
-                drawPath(arrowPath, color = IgTooltipBg)
-
-                // Draw text in tooltip (Percentage on top, Time on bottom)
+                // Tooltip text: Percentage on top (bold white), Time on bottom (muted gray)
                 val percentText = "${activePoint.percent.toInt()}%"
                 val timeText = activePoint.timeLabel
 
                 drawContext.canvas.nativeCanvas.apply {
                     val p1 = android.graphics.Paint().apply {
                         color = android.graphics.Color.WHITE
-                        textSize = 28f
-                        isFakeBoldText = true
+                        textSize = 13.5.sp.toPx()
+                        typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
                         isAntiAlias = true
                         textAlign = android.graphics.Paint.Align.CENTER
                     }
                     val p2 = android.graphics.Paint().apply {
-                        color = android.graphics.Color.parseColor("#B0B0B4")
-                        textSize = 22f
+                        color = android.graphics.Color.parseColor("#9AA0A6")
+                        textSize = 11.sp.toPx()
                         isAntiAlias = true
                         textAlign = android.graphics.Paint.Align.CENTER
                     }
 
-                    drawText(percentText, bubbleX + bubbleWidth / 2, bubbleY + 26f, p1)
-                    drawText(timeText, bubbleX + bubbleWidth / 2, bubbleY + 50f, p2)
+                    drawText(percentText, bubbleX + bubbleWidth / 2, bubbleY + 16.5.dp.toPx(), p1)
+                    drawText(timeText, bubbleX + bubbleWidth / 2, bubbleY + 31.5.dp.toPx(), p2)
                 }
             }
         }

@@ -133,9 +133,19 @@ object ProfileRepository {
             saves: Int = 0,
             durationSec: Int = 8
         ): ReelInsightsData {
-            val healthyViewsOverTime = HealthyGraphGenerator.generateViewsOverTime(totalViews = views)
-            val healthyRetention = HealthyGraphGenerator.generateRetentionCurve(durationSeconds = durationSec, totalViews = views)
-            val healthyWhenLiked = HealthyGraphGenerator.generateWhenLiked(durationSeconds = durationSec, likesCount = likes)
+            val healthyViewsOverTime = HealthyGraphGenerator.generateViewsOverTime(totalViews = views, viewersCount = viewers)
+            val avgWatchSec = avgWatchTime.replace("s", "").replace("sec", "").trim().toFloatOrNull() ?: (durationSec * 0.85f)
+            val healthyRetention = HealthyGraphGenerator.generateRetentionCurve(
+                durationSeconds = durationSec,
+                totalViews = views,
+                viewersCount = viewers,
+                avgWatchTimeSec = avgWatchSec
+            )
+            val healthyWhenLiked = HealthyGraphGenerator.generateWhenLiked(
+                durationSeconds = durationSec,
+                likesCount = likes,
+                totalViews = views
+            )
 
             return ReelInsightsData(
                 caption = caption,

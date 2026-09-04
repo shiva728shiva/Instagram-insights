@@ -36,7 +36,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -311,6 +315,8 @@ fun OverviewTab(
 
         var selectedRetentionIndex by remember(data.retention) { mutableStateOf<Int?>(null) }
         var isRetentionScrubbing by remember { mutableStateOf(false) }
+        val coroutineScope = rememberCoroutineScope()
+        var playIconDelayJob by remember { mutableStateOf<Job?>(null) }
         val activeRetentionPoint = selectedRetentionIndex?.let { data.retention.getOrNull(it) }
         val scrubTimeLabel = activeRetentionPoint?.timeLabel ?: "0:00"
 
@@ -340,23 +346,21 @@ fun OverviewTab(
                     selectedRetentionIndex = newIndex
                 },
                 onInteractingChange = { isInteracting ->
-                    isRetentionScrubbing = isInteracting
+                    playIconDelayJob?.cancel()
+                    if (isInteracting) {
+                        isRetentionScrubbing = true
+                    } else {
+                        // Keep play icon hidden for 2 seconds after user releases touch
+                        playIconDelayJob = coroutineScope.launch {
+                            delay(2000L)
+                            isRetentionScrubbing = false
+                        }
+                    }
                 }
             )
         }
 
-        // Dynamic time limits matching video duration (e.g. 0:00 to 0:08 or actual video duration)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 28.dp, end = 12.dp, top = 2.dp, bottom = 2.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(text = data.retention.firstOrNull()?.timeLabel ?: "0:00", fontSize = 12.sp, color = IgTextFaint)
-            Text(text = data.retention.lastOrNull()?.timeLabel ?: "0:08", fontSize = 12.sp, color = IgTextFaint)
-        }
-
-        Spacer(modifier = Modifier.height(30.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         // 5. Top sources of views
         SectionHeader(title = "Top sources of views")
@@ -478,26 +482,26 @@ fun FilterPill(
 ) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(if (isSelected) IgPillActive else Color.Transparent)
+            .clip(RoundedCornerShape(50))
+            .background(if (isSelected) Color(0xFF2E323A) else Color(0xFF1F2228))
             .border(
                 width = 1.dp,
-                color = if (isSelected) Color.Transparent else IgBorder,
-                shape = RoundedCornerShape(20.dp)
+                color = if (isSelected) Color(0xFF454B57) else Color(0xFF282B32),
+                shape = RoundedCornerShape(50)
             )
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClick
             )
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 18.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = label,
-            fontSize = 13.5.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
-            color = if (isSelected) Color.White else Color.White.copy(alpha = 0.85f)
+            color = Color.White
         )
     }
 }

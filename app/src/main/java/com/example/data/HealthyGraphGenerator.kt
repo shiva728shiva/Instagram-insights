@@ -14,20 +14,22 @@ object HealthyGraphGenerator {
 
     /**
      * Generates a realistic, algorithmically sound 12-day views over time chart.
+     * Correlates directly with [totalViews] and [viewersCount].
      * Follows Instagram's healthy viral distribution curve:
      * - Day 0: 0 views (release moment)
-     * - Day 1: 18%-25% initial audience velocity
-     * - Day 2: 50%-68% algorithmic push (Explore / Reels tab breakout)
-     * - Day 3-4: 78%-88% steady cumulative climb
-     * - Day 5-7: 94%-99% asymptotic approach to total
-     * - Day 8-9: 100% plateau at total views
+     * - Day 1: 18%-24% initial audience velocity
+     * - Day 2: 52%-65% algorithmic push (Explore / Reels tab breakout)
+     * - Day 3-4: 75%-86% steady cumulative climb
+     * - Day 5-7: 92%-98.5% asymptotic approach to total
+     * - Day 8-9: Exactly 100% of total views
      * - Day 10-11: -1f (pending future reporting)
      *
-     * Typical curve follows account baseline (~25%-35% of total peak)
+     * Typical curve follows account baseline (~30%-38% of total peak)
      */
     fun generateViewsOverTime(
         totalViews: Int,
-        typicalRatio: Float = 0.32f,
+        viewersCount: Int = (totalViews * 0.74).toInt(),
+        typicalRatio: Float = 0.34f,
         daysCount: Int = 12,
         customStartLabel: String? = null,
         customMidLabel: String? = null,
@@ -73,20 +75,20 @@ object HealthyGraphGenerator {
             }
         }
 
-        // Percentage milestones along the 12-day lifecycle
+        // Percentage milestones along the 12-day lifecycle for a healthy viral reel
         val cumulativePct = listOf(
-            0.0f,     // Day 0
-            0.22f,    // Day 1
-            0.58f,    // Day 2 (breakout)
-            0.76f,    // Day 3
-            0.86f,    // Day 4
-            0.92f,    // Day 5
-            0.96f,    // Day 6
-            0.985f,   // Day 7
-            1.0f,     // Day 8
-            1.0f,     // Day 9
-            -1.0f,    // Day 10 (unreported)
-            -1.0f     // Day 11 (unreported)
+            0.0f,     // Day 0: 0 views
+            0.20f,    // Day 1: 20%
+            0.58f,    // Day 2: 58% (breakout)
+            0.75f,    // Day 3: 75%
+            0.85f,    // Day 4: 85%
+            0.92f,    // Day 5: 92%
+            0.96f,    // Day 6: 96%
+            0.985f,   // Day 7: 98.5%
+            1.0f,     // Day 8: Exactly 100% of total views
+            1.0f,     // Day 9: Exactly 100% of total views
+            -1.0f,    // Day 10: -1 (future / unreported)
+            -1.0f     // Day 11: -1 (future / unreported)
         )
 
         val typicalPct = listOf(
@@ -122,58 +124,96 @@ object HealthyGraphGenerator {
 
     /**
      * Generates a realistic retention curve from 0:00 up to the video's duration.
-     * Healthy reach characteristics:
-     * - First 3 seconds (Hook): High retention (>90%), gentle drop.
-     * - Middle section: smooth exponential decay.
-     * - Tail (Call to action / loop): healthy retention between 20% and 38%.
+     * Accurately reflects real Instagram healthy metrics:
+     * - Strictly starts at 100.0% at 0:00
+     * - First 1-2 seconds (Hook): High retention (94%-97%), gentle shoulder
+     * - Mid-duration: Smooth monotonic decline shaped by average watch time and replay ratio
+     * - Tail: Healthy completion/loop rate (25%-42%)
      */
     fun generateRetentionCurve(
         durationSeconds: Int = 8,
         totalViews: Int = 1379,
+        viewersCount: Int = 1020,
         avgWatchTimeSec: Float = 6.8f,
         skipRatePercent: Float = 11.2f
     ): List<RetentionPoint> {
         val totalSec = durationSeconds.coerceIn(4, 90)
-        val dropPoint = (avgWatchTimeSec / totalSec.toFloat()).coerceIn(0.15f, 0.85f)
-        val dropSteepness = 7f + (skipRatePercent / 100f) * 18f
+        val safeViews = totalViews.coerceAtLeast(1)
+        val safeViewers = viewersCount.coerceAtLeast(1)
+        val replayRatio = (safeViews.toFloat() / safeViewers.toFloat()).coerceIn(1.0f, 2.5f)
 
-        val raw = (0..totalSec).map { sec ->
-            val t = sec.toFloat() / totalSec.toFloat()
-            val decay = 1f / (1f + exp(dropSteepness * (t - dropPoint)))
-            val floor = if (totalViews > 3000) 24f else 18f
-            (floor + (100f - floor) * decay).coerceIn(12f, 100f)
+        // End completion floor (healthy reels maintain 25%-42% through the loop)
+        val endFloor = (22f + (replayRatio - 1.0f) * 22f + (if (safeViews > 3000) 5f else 0f)).coerceIn(24f, 42f)
+        val normalizedWatch = (avgWatchTimeSec / totalSec.toFloat()).coerceIn(0.40f, 0.90f)
+
+        val points = ArrayList<Float>(totalSec + 1)
+        points.add(100.0f) // 0:00 is strictly 100%
+
+        if (totalSec >= 1) {
+            val hook1 = (100.0f - (2.6f + (skipRatePercent * 0.10f))).coerceIn(93.5f, 98.0f)
+            points.add(hook1)
+        }
+        if (totalSec >= 2) {
+            val prev = points.last()
+            val hook2 = (prev - (4.0f + (skipRatePercent * 0.12f))).coerceIn(86.0f, prev - 1.0f)
+            points.add(hook2)
+        }
+
+        // For remaining seconds: smooth monotonic decay towards endFloor
+        val startDecayVal = points.last()
+        val remainingSecs = totalSec - (points.size - 1)
+        if (remainingSecs > 0) {
+            for (step in 1..remainingSecs) {
+                val t = step.toFloat() / remainingSecs.toFloat()
+                // Logistic sigmoid decay curve centered around the relative watch milestone
+                val decay = 1f / (1f + exp(5.5f * (t - normalizedWatch)))
+                val calc = endFloor + (startDecayVal - endFloor) * decay
+                val prev = points.last()
+                val finalVal = calc.coerceIn(endFloor, prev - 0.2f)
+                points.add(finalVal)
+            }
         }
 
         return (0..totalSec).map { sec ->
             val label = formatTimeLabel(sec)
-            val pct = raw[sec]
-            RetentionPoint(label, pct.roundToSingleDecimal())
+            val pct = points.getOrElse(sec) { endFloor }.roundToSingleDecimal()
+            RetentionPoint(label, pct)
         }
     }
 
     /**
      * Generates a "When people liked your reel" activity distribution curve.
-     * Naturally peaks at 25%-45% of the video duration where the punchline or climax occurs.
+     * Real Instagram pattern:
+     * - Low starting activity (10%-16%) as viewers start watching
+     * - Rises to a pronounced peak at 35%-50% of the video duration (punchline/hook payoff)
+     * - Sustains strong plateau (72%-88%) through the second half
      */
     fun generateWhenLiked(
         durationSeconds: Int = 8,
-        likesCount: Int = 28
+        likesCount: Int = 28,
+        totalViews: Int = 1379
     ): List<Float> {
-        val count = (durationSeconds + 1).coerceIn(8, 24)
-        val peakIndex = (count * 0.35f).toInt().coerceIn(1, count - 2)
+        val count = (durationSeconds + 1).coerceIn(8, 30)
+        val peakIndex = (count * 0.40f).toInt().coerceIn(2, count - 3)
+        val likeRateRatio = (likesCount.toFloat() / totalViews.coerceAtLeast(1).toFloat()).coerceIn(0.01f, 0.15f)
+        val tailFloor = (70f + likeRateRatio * 120f).coerceIn(68f, 88f)
 
-        val raw = (0 until count).map { i ->
-            val distFromPeak = kotlin.math.abs(i - peakIndex).toFloat()
-            val base = 100f - (distFromPeak * 18f)
+        return (0 until count).map { i ->
             when {
-                i == 0 -> 15f
-                i == peakIndex -> 100f
-                i == peakIndex - 1 -> 90f
-                i == peakIndex + 1 -> 95f
-                else -> base.coerceIn(10f, 85f)
+                i == 0 -> 12.0f
+                i == 1 -> 28.0f
+                i < peakIndex -> {
+                    val progress = (i - 1).toFloat() / (peakIndex - 1).toFloat()
+                    (28.0f + (100.0f - 28.0f) * kotlin.math.sin(progress * (Math.PI / 2)).toFloat()).coerceIn(28f, 100f)
+                }
+                i == peakIndex -> 100.0f
+                else -> {
+                    val postProgress = (i - peakIndex).toFloat() / (count - 1 - peakIndex).toFloat()
+                    val decay = kotlin.math.cos(postProgress * (Math.PI / 2)).toFloat()
+                    (tailFloor + (100.0f - tailFloor) * decay).coerceIn(tailFloor, 100f)
+                }
             }
         }
-        return raw
     }
 
     /**
@@ -182,26 +222,29 @@ object HealthyGraphGenerator {
      */
     fun computeHealthyMetrics(
         views: Int,
+        likes: Int? = null,
+        viewers: Int? = null,
         durationSeconds: Int = 8
     ): HealthyMetricsResult {
         val safeViews = views.coerceAtLeast(1)
         val durationSec = durationSeconds.coerceIn(3, 90)
 
-        // Viewers (Unique accounts reached): typically 65% - 82% of total views due to loops/re-watches
-        val viewers = (safeViews * 0.74).toInt().coerceAtLeast(1)
+        // Viewers (Unique accounts reached): typically 68% - 82% of total views due to loops/re-watches
+        val resultViewers = viewers ?: (safeViews * 0.74).toInt().coerceAtLeast(1)
 
-        // Average watch time: healthy reels achieve 70% to 120% of video length
+        // Average watch time: healthy reels achieve 70% to 110% of video length
         val avgWatchSec = ((durationSec * 0.85).toInt()).coerceAtLeast(3)
         val avgWatchTime = "${avgWatchSec}s"
 
-        // Skip rate: healthy reels have lower skip rate (< 16%)
-        val skipRate = (11.5f + (800f / (safeViews + 200f)) * 2f).coerceIn(8.5f, 14.8f).roundToSingleDecimal()
+        // Skip rate: healthy reels have lower skip rate (< 14%)
+        val skipRate = (10.8f + (600f / (safeViews + 300f))).coerceIn(8.5f, 13.8f).roundToSingleDecimal()
 
         // Like rate: healthy reels have high like rate (2.0% - 6.5%)
-        val likeRate = ((28f / safeViews.coerceAtLeast(20)) * 100f).coerceIn(1.2f, 7.5f).roundToSingleDecimal()
+        val resultLikes = likes ?: (safeViews * 0.042f).roundToInt().coerceAtLeast(1)
+        val likeRate = ((resultLikes.toFloat() / safeViews.toFloat()) * 100f).coerceIn(1.2f, 8.5f).roundToSingleDecimal()
 
         return HealthyMetricsResult(
-            viewers = viewers,
+            viewers = resultViewers,
             avgWatchTime = avgWatchTime,
             skipRate = skipRate,
             likeRate = likeRate

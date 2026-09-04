@@ -55,9 +55,9 @@ fun FrameScrubVideoPreview(
     scrubSecond: Int,
     timeLabel: String = "",
     showPlayIcon: Boolean = true,
-    width: Dp = 136.dp,
-    height: Dp = 240.dp,
-    cornerRadius: Dp = 12.dp,
+    width: Dp = 92.dp,
+    height: Dp = 164.dp,
+    cornerRadius: Dp = 8.dp,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -157,45 +157,50 @@ fun FrameScrubVideoPreview(
             }
         }
 
-        // Instagram Hollow Outlined Play Icon with smooth rounded corners (compact & refined)
+        // Instagram Hollow Outlined Play Icon with delicately rounded corners matching real Instagram
         if (showPlayIcon && !isPlaying) {
             androidx.compose.foundation.Canvas(
-                modifier = Modifier.size(34.dp)
+                modifier = Modifier.size(22.dp)
             ) {
                 val cx = size.width / 2
                 val cy = size.height / 2
 
-                val v1 = Offset(cx - 10.dp.toPx(), cy - 13.dp.toPx()) // top-left
-                val v2 = Offset(cx + 13.5.dp.toPx(), cy)               // right tip
-                val v3 = Offset(cx - 10.dp.toPx(), cy + 13.dp.toPx()) // bottom-left
+                // Visual center offset so triangle center-of-mass aligns with thumbnail center
+                val offsetVisual = 1.0.dp.toPx()
+                val v1 = Offset(cx - 7.0.dp.toPx() + offsetVisual, cy - 8.5.dp.toPx()) // top-left
+                val v2 = Offset(cx + 8.5.dp.toPx() + offsetVisual, cy)                 // right tip
+                val v3 = Offset(cx - 7.0.dp.toPx() + offsetVisual, cy + 8.5.dp.toPx()) // bottom-left
 
-                val cr = 3.6.dp.toPx()
+                // Distinct rounded corner radius (tip has soft roundness as in real IG)
+                val crTip = 3.6.dp.toPx()
+                val crBase = 2.6.dp.toPx()
 
                 val d12 = kotlin.math.hypot((v2.x - v1.x).toDouble(), (v2.y - v1.y).toDouble()).toFloat()
                 val u12 = Offset((v2.x - v1.x) / d12, (v2.y - v1.y) / d12)
-                val u21 = Offset(-u12.x, -u12.y)
 
                 val d23 = kotlin.math.hypot((v3.x - v2.x).toDouble(), (v3.y - v2.y).toDouble()).toFloat()
                 val u23 = Offset((v3.x - v2.x) / d23, (v3.y - v2.y) / d23)
-                val u32 = Offset(-u23.x, -u23.y)
 
-                val p1In = Offset(v1.x, v1.y + cr)
-                val p1Out = v1 + u12 * cr
+                val d31 = kotlin.math.hypot((v1.x - v3.x).toDouble(), (v1.y - v3.y).toDouble()).toFloat()
+                val u31 = Offset((v1.x - v3.x) / d31, (v1.y - v3.y) / d31)
 
-                val p2In = v2 + u21 * (cr * 1.3f)
-                val p2Out = v2 + u23 * (cr * 1.3f)
+                val p1In = v1 - u31 * crBase
+                val p1Out = v1 + u12 * crBase
 
-                val p3In = v3 + u32 * cr
-                val p3Out = Offset(v3.x, v3.y - cr)
+                val p2In = v2 - u12 * crTip
+                val p2Out = v2 + u23 * crTip
+
+                val p3In = v3 - u23 * crBase
+                val p3Out = v3 + u31 * crBase
 
                 val playPath = androidx.compose.ui.graphics.Path().apply {
-                    moveTo(p1In.x, p1In.y)
-                    quadraticTo(v1.x, v1.y, p1Out.x, p1Out.y)
+                    moveTo(p1Out.x, p1Out.y)
                     lineTo(p2In.x, p2In.y)
                     quadraticTo(v2.x, v2.y, p2Out.x, p2Out.y)
                     lineTo(p3In.x, p3In.y)
                     quadraticTo(v3.x, v3.y, p3Out.x, p3Out.y)
                     lineTo(p1In.x, p1In.y)
+                    quadraticTo(v1.x, v1.y, p1Out.x, p1Out.y)
                     close()
                 }
 
@@ -204,7 +209,7 @@ fun FrameScrubVideoPreview(
                     path = playPath,
                     color = Color.White.copy(alpha = 0.95f),
                     style = androidx.compose.ui.graphics.drawscope.Stroke(
-                        width = 2.4.dp.toPx(),
+                        width = 1.8.dp.toPx(),
                         cap = androidx.compose.ui.graphics.StrokeCap.Round,
                         join = androidx.compose.ui.graphics.StrokeJoin.Round
                     )

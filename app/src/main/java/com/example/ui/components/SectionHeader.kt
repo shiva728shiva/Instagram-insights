@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.sp
 import com.example.ui.theme.IgTextMuted
 import com.example.ui.theme.IgTextPrimary
 
+import androidx.compose.ui.graphics.Color
+
 @Composable
 fun SectionHeader(
     title: String,
@@ -47,14 +49,14 @@ fun SectionHeader(
                 text = title,
                 fontSize = 16.5.sp,
                 fontWeight = FontWeight.Bold,
-                color = IgTextPrimary
+                color = Color.White
             )
             if (showInfoIcon) {
                 Spacer(modifier = Modifier.width(6.dp))
                 Icon(
                     imageVector = Icons.Outlined.Info,
                     contentDescription = "Info",
-                    tint = IgTextMuted,
+                    tint = Color(0xFFB0B0B8),
                     modifier = Modifier.size(16.dp)
                 )
             }

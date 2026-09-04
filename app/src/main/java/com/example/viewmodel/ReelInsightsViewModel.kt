@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 enum class InsightsTab(val label: String) {
     OVERVIEW("Overview"),
@@ -166,12 +167,16 @@ class ReelInsightsViewModel : ViewModel() {
             val newViews = views ?: current.views
             val newLikes = likes ?: current.likes
             val viewsChanged = views != null && views != current.views
+            val newViewers = viewers ?: if (viewsChanged) (newViews * 0.74).toInt().coerceAtLeast(1) else current.viewers
+            val viewersChanged = viewers != null && viewers != current.viewers
+            val likesChanged = likes != null && likes != current.likes
             val datesChanged = !viewsOverTimeStartDate.isNullOrBlank() || !viewsOverTimeMidDate.isNullOrBlank() || !viewsOverTimeEndDate.isNullOrBlank()
 
-            // Compute healthy graphs and metrics if views changed or if graphs need refresh or dates changed
-            val healthyViewsOverTime = if (viewsChanged || datesChanged) {
+            // Compute healthy graphs and metrics if views, viewers, or likes changed, or dates changed
+            val healthyViewsOverTime = if (viewsChanged || viewersChanged || datesChanged) {
                 HealthyGraphGenerator.generateViewsOverTime(
                     totalViews = newViews,
+                    viewersCount = newViewers,
                     customStartLabel = viewsOverTimeStartDate ?: current.viewsOverTime.firstOrNull()?.dateLabel,
                     customMidLabel = viewsOverTimeMidDate ?: current.viewsOverTime.getOrNull(6)?.dateLabel,
                     customEndLabel = viewsOverTimeEndDate ?: current.viewsOverTime.lastOrNull()?.dateLabel
@@ -179,12 +184,24 @@ class ReelInsightsViewModel : ViewModel() {
             } else current.viewsOverTime
 
             val durationSec = ((current.videoDurationMs / 1000L).toInt()).coerceIn(4, 60)
-            val healthyRetention = if (viewsChanged) {
-                HealthyGraphGenerator.generateRetentionCurve(durationSeconds = durationSec, totalViews = newViews)
+            val avgWatchSec = (avgWatchTime ?: current.avgWatchTime).replace("s", "").replace("sec", "").trim().toFloatOrNull() ?: (durationSec * 0.85f)
+
+            val healthyRetention = if (viewsChanged || viewersChanged || avgWatchTime != null) {
+                HealthyGraphGenerator.generateRetentionCurve(
+                    durationSeconds = durationSec,
+                    totalViews = newViews,
+                    viewersCount = newViewers,
+                    avgWatchTimeSec = avgWatchSec,
+                    skipRatePercent = skipRate ?: current.skipRate
+                )
             } else current.retention
 
-            val healthyWhenLiked = if (viewsChanged || (likes != null && likes != current.likes)) {
-                HealthyGraphGenerator.generateWhenLiked(durationSeconds = durationSec, likesCount = newLikes)
+            val healthyWhenLiked = if (viewsChanged || likesChanged) {
+                HealthyGraphGenerator.generateWhenLiked(
+                    durationSeconds = durationSec,
+                    likesCount = newLikes,
+                    totalViews = newViews
+                )
             } else current.whenLiked
 
             val updated = current.copy(
@@ -192,7 +209,7 @@ class ReelInsightsViewModel : ViewModel() {
                 handle = handle ?: current.handle,
                 thumbnailUrl = thumbnailUrl ?: current.thumbnailUrl,
                 views = newViews,
-                viewers = viewers ?: if (viewsChanged) (newViews * 0.74).toInt().coerceAtLeast(1) else current.viewers,
+                viewers = newViewers,
                 avgWatchTime = avgWatchTime ?: current.avgWatchTime,
                 follows = follows ?: current.follows,
                 likes = newLikes,
@@ -202,7 +219,7 @@ class ReelInsightsViewModel : ViewModel() {
                 saves = saves ?: current.saves,
                 skipRate = skipRate ?: current.skipRate,
                 skipRateQualifier = skipRateQualifier ?: current.skipRateQualifier,
-                likeRate = likeRate ?: if (viewsChanged) ((newLikes.toFloat() / newViews.coerceAtLeast(1)) * 100f) else current.likeRate,
+                likeRate = likeRate ?: if (viewsChanged || likesChanged) (((newLikes.toFloat() / newViews.coerceAtLeast(1).toFloat()) * 100f) * 10f).roundToInt() / 10f else current.likeRate,
                 likeRateQualifier = likeRateQualifier ?: current.likeRateQualifier,
                 shareRate = shareRate ?: current.shareRate,
                 saveRate = saveRate ?: current.saveRate,
