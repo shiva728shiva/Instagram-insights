@@ -14,6 +14,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -33,20 +34,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Comment
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.automirrored.outlined.TrendingUp
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.RemoveRedEye
-import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -59,6 +49,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,15 +60,21 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
+import com.example.R
 import com.example.data.model.ReelItem
+import com.example.ui.components.IgIcons
 import com.example.ui.theme.IgPinkAccent
 import com.example.ui.theme.IgPurple
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun ReelPlayerScreen(
@@ -94,7 +91,9 @@ fun ReelPlayerScreen(
     var likesCount by remember(reel) { mutableIntStateOf(reel.likesCount) }
     var isSaved by remember { mutableStateOf(false) }
     var videoViewRef by remember { mutableStateOf<VideoView?>(null) }
-    var showUploadedToast by remember { mutableStateOf(true) }
+    var showTempActionIndicator by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    var hideIndicatorJob by remember { mutableStateOf<Job?>(null) }
 
     // Launcher for selecting profile photo from phone gallery directly
     val galleryAvatarLauncher = rememberLauncherForActivityResult(
@@ -105,15 +104,12 @@ fun ReelPlayerScreen(
         }
     }
 
-    // "Original video uploaded ⚡" banner fades out cleanly after initial 0.5s
-    LaunchedEffect(Unit) {
-        delay(600)
-        showUploadedToast = false
+    val playableVideoUri = remember(reel) {
+        reel.insightsData.videoUri?.ifBlank { null }
+            ?: reel.videoUrl.ifBlank { null }
     }
 
-    val isLocalVideo = !reel.insightsData.videoUri.isNullOrBlank() && reel.insightsData.videoUri?.startsWith("content://") == true
-
-    // Subtle gentle zoom animation to give live dynamic video effect
+    // Subtle gentle zoom animation when using image fallback
     val infiniteTransition = rememberInfiniteTransition(label = "videoMotion")
     val scale by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -130,26 +126,42 @@ fun ReelPlayerScreen(
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        // 1. Full Screen Video Player / Cover Area (Click to play/pause)
+        // 1. Full Screen Video Player / Cover Area
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(Unit) {
+                .pointerInput(playableVideoUri) {
                     detectTapGestures {
-                        isPlaying = !isPlaying
+                        if (playableVideoUri != null) {
+                            isPlaying = !isPlaying
+                            showTempActionIndicator = true
+                            hideIndicatorJob?.cancel()
+                            hideIndicatorJob = coroutineScope.launch {
+                                delay(650L)
+                                showTempActionIndicator = false
+                            }
+                        } else {
+                            onSelectVideoClick()
+                        }
                     }
                 }
         ) {
-            if (isLocalVideo) {
+            if (playableVideoUri != null) {
                 AndroidView(
                     factory = { ctx ->
                         VideoView(ctx).apply {
-                            setVideoURI(Uri.parse(reel.insightsData.videoUri))
+                            val uri = if (playableVideoUri.startsWith("/")) {
+                                Uri.fromFile(java.io.File(playableVideoUri))
+                            } else {
+                                Uri.parse(playableVideoUri)
+                            }
+                            setVideoURI(uri)
                             setOnPreparedListener { mp ->
                                 mp.isLooping = true
                                 mp.setVolume(1f, 1f)
                                 if (isPlaying) start()
                             }
+                            setOnErrorListener { _, _, _ -> true }
                             videoViewRef = this
                         }
                     },
@@ -163,7 +175,7 @@ fun ReelPlayerScreen(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                DisposableEffect(Unit) {
+                DisposableEffect(playableVideoUri) {
                     onDispose {
                         videoViewRef?.stopPlayback()
                     }
@@ -184,28 +196,28 @@ fun ReelPlayerScreen(
                 )
             }
 
-            // Top gradient overlay (smooth white/dark to transparent gradient)
+            // Top gradient overlay for header readability
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(130.dp)
+                    .height(120.dp)
                     .align(Alignment.TopCenter)
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
                                 Color.Black.copy(alpha = 0.55f),
-                                Color.Black.copy(alpha = 0.25f),
+                                Color.Black.copy(alpha = 0.2f),
                                 Color.Transparent
                             )
                         )
                     )
             )
 
-            // Bottom gradient scrim overlay (smooth transparent to rich dark gradient for captions & actions)
+            // Bottom gradient scrim overlay for captions & actions readability
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(330.dp)
+                    .height(300.dp)
                     .align(Alignment.BottomCenter)
                     .background(
                         Brush.verticalGradient(
@@ -219,132 +231,92 @@ fun ReelPlayerScreen(
                     )
             )
 
-            // Play/Pause Floating Indicator
-            if (!isPlaying) {
+            // Temporary Floating Play/Pause Indicator that cleanly fades out
+            AnimatedVisibility(
+                visible = showTempActionIndicator,
+                enter = fadeIn(animationSpec = tween(150)),
+                exit = fadeOut(animationSpec = tween(300)),
+                modifier = Modifier.align(Alignment.Center)
+            ) {
                 Box(
                     modifier = Modifier
-                        .align(Alignment.Center)
-                        .size(64.dp)
+                        .size(60.dp)
                         .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.6f)),
+                        .background(Color.Black.copy(alpha = 0.55f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "Play",
+                        imageVector = if (isPlaying) Icons.Default.PlayArrow else Icons.Default.Pause,
+                        contentDescription = if (isPlaying) "Play" else "Pause",
                         tint = Color.White,
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(34.dp)
                     )
                 }
             }
         }
 
-        // 2. Top Header Navigation (Gradient background, faded semi-transparent back arrow + faded icons)
-        Column(
+        // 2. Top Header Navigation: "Reels" + Back Arrow + Camera Icon (Matching Real IG Screenshot 2)
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.TopCenter)
                 .statusBarsPadding()
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable { onBackToProfile() }
             ) {
                 IconButton(
                     onClick = onBackToProfile,
-                    modifier = Modifier.testTag("back_to_profile_button")
+                    modifier = Modifier
+                        .size(36.dp)
+                        .testTag("back_to_profile_button")
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        painter = painterResource(id = IgIcons.back),
                         contentDescription = "Back",
-                        tint = Color.White.copy(alpha = 0.9f)
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
+
+                Spacer(modifier = Modifier.width(2.dp))
 
                 Text(
-                    text = "Your reels",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White.copy(alpha = 0.92f)
+                    text = "Reels",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
                 )
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
-                        onClick = onSelectVideoClick,
-                        modifier = Modifier.testTag("select_video_in_player_btn")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.VideoLibrary,
-                            contentDescription = "Select Video",
-                            tint = Color.White.copy(alpha = 0.9f)
-                        )
-                    }
-
-                    IconButton(onClick = onOpenEditor) {
-                        Icon(
-                            imageVector = Icons.Default.PhotoCamera,
-                            contentDescription = "Camera / Edit",
-                            tint = Color.White.copy(alpha = 0.9f)
-                        )
-                    }
-                }
             }
 
-            // "Original video uploaded ⚡" temporary indicator (smooth fade out in 0.5s)
-            AnimatedVisibility(
-                visible = showUploadedToast,
-                enter = fadeIn(),
-                exit = fadeOut(animationSpec = tween(400)),
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+            IconButton(
+                onClick = onSelectVideoClick,
+                modifier = Modifier
+                    .size(38.dp)
+                    .testTag("camera_video_picker_btn")
             ) {
-                Box(
-                    modifier = Modifier
-                        .padding(top = 4.dp)
-                        .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(16.dp))
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    Text(
-                        text = "Original video uploaded ⚡",
-                        fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.9f),
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-
-            // Top custom overlay text if present and not the generic upload string
-            if (reel.topOverlayText.isNotBlank() && !reel.topOverlayText.contains("uploaded", ignoreCase = true)) {
-                Box(
-                    modifier = Modifier
-                        .padding(top = 6.dp, start = 16.dp, end = 16.dp)
-                        .align(Alignment.CenterHorizontally)
-                        .background(Color.White, RoundedCornerShape(8.dp))
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
-                ) {
-                    Text(
-                        text = reel.topOverlayText,
-                        fontSize = 14.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black,
-                        lineHeight = 19.sp
-                    )
-                }
+                Icon(
+                    painter = painterResource(id = IgIcons.camera),
+                    contentDescription = "Camera / Select Video",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
             }
         }
 
-        // 3. Right-Side Action Icons Column (Heart, Comment, Repost, Share, Bookmark, More)
-        // Positioned safely with end = 16.dp padding and rounded icon styling
+        // 3. Right-Side Action Icons Column (Heart, Comment, Repost, Share, Bookmark, More, Audio Artwork)
         Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = 86.dp),
+                .padding(end = 12.dp, bottom = 74.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            // 1. Like Button (Heart)
+            // 1. Like Button
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.clickable {
@@ -353,122 +325,139 @@ fun ReelPlayerScreen(
                 }
             ) {
                 Icon(
-                    imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    painter = painterResource(id = IgIcons.likeRate),
                     contentDescription = "Like",
                     tint = if (isLiked) Color(0xFFFF2D55) else Color.White,
                     modifier = Modifier.size(28.dp)
                 )
                 Text(
-                    text = likesCount.toString(),
-                    fontSize = 12.sp,
+                    text = formatViewsShort(likesCount),
+                    fontSize = 12.5.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White,
-                    modifier = Modifier.padding(top = 2.dp)
+                    modifier = Modifier.padding(top = 3.dp)
                 )
             }
 
-            // 2. Comment Button (Instagram comment bubble)
+            // 2. Comment Button (In real IG, no number is displayed if 0)
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.clickable { onOpenEditor() }
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Comment,
+                    painter = painterResource(id = IgIcons.commentRate),
                     contentDescription = "Comment",
                     tint = Color.White,
                     modifier = Modifier.size(26.dp)
                 )
-                Text(
-                    text = if (reel.commentsCount > 0) reel.commentsCount.toString() else "0",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
+                if (reel.commentsCount > 0) {
+                    Text(
+                        text = formatViewsShort(reel.commentsCount),
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                        modifier = Modifier.padding(top = 3.dp)
+                    )
+                }
             }
 
-            // 3. Repost Button
+            // 3. Repost Button (In real IG, no number is displayed if 0)
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.clickable { onOpenEditor() }
             ) {
                 Icon(
-                    imageVector = Icons.Default.Repeat,
+                    painter = painterResource(id = IgIcons.repostRate),
                     contentDescription = "Repost",
                     tint = Color.White,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(26.dp)
                 )
                 if (reel.insightsData.reshares > 0) {
                     Text(
-                        text = reel.insightsData.reshares.toString(),
-                        fontSize = 12.sp,
+                        text = formatViewsShort(reel.insightsData.reshares),
+                        fontSize = 12.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color.White,
-                        modifier = Modifier.padding(top = 2.dp)
+                        modifier = Modifier.padding(top = 3.dp)
                     )
                 }
             }
 
-            // 4. Send / Share Button (Paper airplane)
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.Send,
-                contentDescription = "Share",
-                tint = Color.White.copy(alpha = 0.92f),
-                modifier = Modifier
-                    .size(26.dp)
-                    .clickable { onOpenEditor() }
-            )
+            // 4. Send / Share Button (Paper Plane)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.clickable { onOpenEditor() }
+            ) {
+                Icon(
+                    painter = painterResource(id = IgIcons.shareRate),
+                    contentDescription = "Share",
+                    tint = Color.White,
+                    modifier = Modifier.size(26.dp)
+                )
+                if (reel.insightsData.sends > 0) {
+                    Text(
+                        text = formatViewsShort(reel.insightsData.sends),
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                        modifier = Modifier.padding(top = 3.dp)
+                    )
+                }
+            }
 
             // 5. Bookmark / Save Button
             Icon(
-                imageVector = if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                painter = painterResource(id = IgIcons.saveRate),
                 contentDescription = "Save",
-                tint = if (isSaved) Color(0xFFF9CE34) else Color.White.copy(alpha = 0.92f),
+                tint = if (isSaved) Color(0xFFF9CE34) else Color.White,
                 modifier = Modifier
-                    .size(26.dp)
+                    .size(24.dp)
                     .clickable { isSaved = !isSaved }
             )
 
-            // 6. More (Three dots)
+            // 6. More (Two horizontal bars =)
             Icon(
-                imageVector = Icons.Default.MoreHoriz,
+                painter = painterResource(id = IgIcons.more),
                 contentDescription = "More",
-                tint = Color.White.copy(alpha = 0.92f),
+                tint = Color.White,
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(22.dp)
                     .clickable { onOpenEditor() }
             )
+
+            // 7. Small Audio Album Art Square (at bottom of action column matching real IG)
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(RoundedCornerShape(5.dp))
+                    .border(1.2.dp, Color.White, RoundedCornerShape(5.dp))
+                    .clickable { onOpenEditor() }
+            ) {
+                AsyncImage(
+                    model = reel.insightsData.thumbnailUrl,
+                    contentDescription = "Audio Artwork",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
 
-        // 4. Bottom-Left Username + Avatar (Gallery Photo Picker) + Caption Row
+        // 4. Bottom-Left Username + Audio + Caption (Matching Real IG Screenshot 2)
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .fillMaxWidth(0.74f)
-                .padding(start = 16.dp, bottom = 86.dp)
+                .fillMaxWidth(0.72f)
+                .padding(start = 14.dp, bottom = 74.dp)
         ) {
-            // Avatar with Instagram Story gradient ring + Username (Click avatar to pick photo from gallery)
+            // Avatar + Username + Audio Row
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .padding(vertical = 2.dp)
+                modifier = Modifier.padding(bottom = 6.dp)
             ) {
+                // Clean circular profile avatar matching real IG
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.sweepGradient(
-                                listOf(
-                                    Color(0xFFF9CE34),
-                                    Color(0xFFEE2A7B),
-                                    Color(0xFF6228D7),
-                                    Color(0xFFF9CE34)
-                                )
-                            )
-                        )
-                        .padding(2.dp)
+                        .size(34.dp)
                         .clip(CircleShape)
                         .clickable {
                             galleryAvatarLauncher.launch("image/*")
@@ -476,7 +465,7 @@ fun ReelPlayerScreen(
                 ) {
                     AsyncImage(
                         model = reel.insightsData.thumbnailUrl,
-                        contentDescription = "Avatar (Tap to change from gallery)",
+                        contentDescription = "Avatar (Tap to change)",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -484,31 +473,53 @@ fun ReelPlayerScreen(
 
                 Spacer(modifier = Modifier.width(10.dp))
 
-                Text(
-                    text = reel.insightsData.handle.ifBlank { "alishaasassy" },
-                    fontSize = 14.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    modifier = Modifier.clickable { onOpenEditor() }
-                )
-            }
+                Column {
+                    Text(
+                        text = reel.insightsData.handle.ifBlank { "costflorarprim1974" },
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        modifier = Modifier.clickable { onOpenEditor() }
+                    )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    // Audio track title row
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { onOpenEditor() }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MusicNote,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.9f),
+                            modifier = Modifier.size(11.dp)
+                        )
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text(
+                            text = reel.insightsData.musicTitle.ifBlank { "Original audio" },
+                            fontSize = 12.sp,
+                            color = Color.White.copy(alpha = 0.9f)
+                        )
+                    }
+                }
+            }
 
             // Caption Text
             Text(
-                text = reel.caption.ifBlank { "IG model @piperrockelle recently sparked attentio ..." },
-                fontSize = 13.sp,
+                text = reel.caption.ifBlank { "@higgsfield.ai — every new universe can change t ..." },
+                fontSize = 13.5.sp,
                 color = Color.White,
                 maxLines = 2,
-                lineHeight = 17.sp,
+                overflow = TextOverflow.Ellipsis,
+                lineHeight = 17.5.sp,
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
                     .clickable { onOpenEditor() }
             )
         }
 
-        // 5. Bottom Bar (Get inspired on Edits pill + 👁 1.3K views + 📈 Boost)
+        // 5. Bottom Bar (Get inspired on Edits pill + Vertically Stacked Views & Boost)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -522,84 +533,84 @@ fun ReelPlayerScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // "Get inspired on Edits" pill button
+                // "Get inspired on Edits" pill button with authentic badge icon
                 Button(
                     onClick = onOpenInsights,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.White,
                         contentColor = Color.Black
                     ),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(22.dp),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                        horizontal = 13.dp,
+                        horizontal = 14.dp,
                         vertical = 7.dp
                     ),
                     modifier = Modifier.testTag("get_inspired_on_edits_button")
                 ) {
                     Icon(
-                        imageVector = Icons.Default.AutoAwesome,
+                        painter = painterResource(id = IgIcons.editsBadge),
                         contentDescription = null,
-                        tint = Color(0xFFE1306C),
-                        modifier = Modifier.size(15.dp)
+                        tint = Color.Unspecified,
+                        modifier = Modifier.size(18.dp)
                     )
-                    Spacer(modifier = Modifier.width(5.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Get inspired on Edits",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.SemiBold,
                         color = Color.Black
                     )
                 }
 
-                // Views Counter & Boost Button
+                // Views Counter & Boost Button (Vertically Stacked Icon + Text matching Real IG)
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(18.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Clickable Views Counter with EYE ICON (👁 1.3K views)
-                    Row(
+                    // Clickable Views Counter with Eye Icon on top
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
                             .clickable { onOpenInsights() }
-                            .padding(horizontal = 4.dp, vertical = 4.dp)
-                            .testTag("reel_views_insights_trigger"),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                            .testTag("reel_views_insights_trigger")
                     ) {
                         Icon(
-                            imageVector = Icons.Default.RemoveRedEye,
+                            painter = painterResource(id = IgIcons.eye),
                             contentDescription = "Views",
                             tint = Color.White,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(19.dp)
                         )
-                        Spacer(modifier = Modifier.width(5.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
                         Text(
                             text = "${formatViewsShort(reel.viewsCount)} views",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Normal,
                             color = Color.White
                         )
                     }
 
-                    // Boost Button with Trend Icon
-                    Row(
+                    // Boost Button with Trending Arrow Icon on top
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
                             .clickable { onOpenInsights() }
-                            .padding(horizontal = 4.dp, vertical = 4.dp)
-                            .testTag("reel_boost_insights_trigger"),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                            .testTag("reel_boost_insights_trigger")
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.TrendingUp,
+                            painter = painterResource(id = IgIcons.boost),
                             contentDescription = "Boost",
                             tint = Color.White,
-                            modifier = Modifier.size(15.dp)
+                            modifier = Modifier.size(17.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
                         Text(
                             text = "Boost",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Normal,
                             color = Color.White
                         )
                     }

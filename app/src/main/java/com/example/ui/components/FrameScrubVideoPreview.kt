@@ -58,35 +58,68 @@ fun FrameScrubVideoPreview(
     width: Dp = 72.dp,
     height: Dp = 126.dp,
     cornerRadius: Dp = 6.dp,
+    onVideoSelected: ((Uri) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     var isPlaying by remember { mutableStateOf(false) }
     var currentFrameBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var videoViewRef by remember { mutableStateOf<VideoView?>(null) }
+    val frameCache = remember(videoUri) { mutableMapOf<Int, Bitmap>() }
 
-    // When scrubSecond changes and not actively playing, extract the exact frame
+    val videoPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null && onVideoSelected != null) {
+            onVideoSelected(uri)
+        }
+    }
+
+    // When scrubSecond changes and videoView is active, seek immediately
+    LaunchedEffect(scrubSecond) {
+        if (videoViewRef != null) {
+            try {
+                videoViewRef?.seekTo(scrubSecond * 1000)
+            } catch (_: Exception) {}
+        }
+    }
+
+    // When scrubSecond changes and not actively playing, extract or lookup the exact frame
     LaunchedEffect(videoUri, scrubSecond) {
         if (!videoUri.isNullOrBlank() && !isPlaying) {
-            try {
-                withContext(Dispatchers.IO) {
-                    val retriever = MediaMetadataRetriever()
-                    try {
-                        val uri = Uri.parse(videoUri)
-                        retriever.setDataSource(context, uri)
-                        val frameUs = scrubSecond * 1_000_000L
-                        val frame = retriever.getFrameAtTime(frameUs, MediaMetadataRetriever.OPTION_CLOSEST)
-                        withContext(Dispatchers.Main) {
-                            currentFrameBitmap = frame
-                        }
-                    } catch (_: Exception) {
-                    } finally {
+            if (frameCache.containsKey(scrubSecond)) {
+                currentFrameBitmap = frameCache[scrubSecond]
+            } else {
+                try {
+                    withContext(Dispatchers.IO) {
+                        val retriever = MediaMetadataRetriever()
                         try {
-                            retriever.release()
-                        } catch (_: Exception) {}
+                            if (videoUri.startsWith("content://")) {
+                                retriever.setDataSource(context, Uri.parse(videoUri))
+                            } else if (videoUri.startsWith("file://")) {
+                                retriever.setDataSource(Uri.parse(videoUri).path)
+                            } else if (videoUri.startsWith("/")) {
+                                retriever.setDataSource(videoUri)
+                            } else {
+                                retriever.setDataSource(videoUri, HashMap())
+                            }
+                            val frameUs = scrubSecond * 1_000_000L
+                            val frame = retriever.getFrameAtTime(frameUs, MediaMetadataRetriever.OPTION_CLOSEST)
+                            if (frame != null) {
+                                frameCache[scrubSecond] = frame
+                                withContext(Dispatchers.Main) {
+                                    currentFrameBitmap = frame
+                                }
+                            }
+                        } catch (_: Exception) {
+                        } finally {
+                            try {
+                                retriever.release()
+                            } catch (_: Exception) {}
+                        }
                     }
-                }
-            } catch (_: Exception) {}
+                } catch (_: Exception) {}
+            }
         }
     }
 
@@ -101,7 +134,17 @@ fun FrameScrubVideoPreview(
                 )
             )
             .clickable {
-                isPlaying = !isPlaying
+                if (videoUri.isNullOrBlank() && onVideoSelected != null) {
+                    try {
+                        videoPickerLauncher.launch(
+                            androidx.activity.result.PickVisualMediaRequest(
+                                androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VideoOnly
+                            )
+                        )
+                    } catch (_: Exception) {}
+                } else {
+                    isPlaying = !isPlaying
+                }
             }
             .testTag("video_scrub_preview"),
         contentAlignment = Alignment.Center
@@ -111,7 +154,8 @@ fun FrameScrubVideoPreview(
             AndroidView(
                 factory = { ctx ->
                     VideoView(ctx).apply {
-                        setVideoURI(Uri.parse(videoUri))
+                        val uri = if (videoUri.startsWith("/")) Uri.fromFile(java.io.File(videoUri)) else Uri.parse(videoUri)
+                        setVideoURI(uri)
                         setOnPreparedListener { mp ->
                             mp.isLooping = true
                             mp.setVolume(0.8f, 0.8f)
@@ -122,8 +166,8 @@ fun FrameScrubVideoPreview(
                     }
                 },
                 update = { view ->
+                    view.seekTo(scrubSecond * 1000)
                     if (!view.isPlaying) {
-                        view.seekTo(scrubSecond * 1000)
                         view.start()
                     }
                 },
@@ -153,6 +197,24 @@ fun FrameScrubVideoPreview(
                     contentDescription = "Video Preview",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+        // Scrub timestamp overlay when scrubbing or active
+        if (timeLabel.isNotBlank() && timeLabel != "0:00") {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 4.dp)
+                    .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(4.dp))
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = timeLabel,
+                    color = Color.White,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
         }

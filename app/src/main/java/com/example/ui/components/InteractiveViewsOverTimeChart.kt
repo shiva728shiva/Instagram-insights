@@ -15,8 +15,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -53,7 +56,9 @@ fun InteractiveViewsOverTimeChart(
     var selectedIndex by remember(dataPoints) {
         mutableIntStateOf(-1)
     }
-    var isTouching by remember { mutableStateOf(false) }
+    var isLineVisible by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    var hideJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
 
     // Multiplier for filter (All: 1.0, Followers: 0.08, Non-followers: 0.92)
     val factor = when (selectedFilter) {
@@ -78,20 +83,10 @@ fun InteractiveViewsOverTimeChart(
             modifier = Modifier
                 .fillMaxSize()
                 .pointerInput(dataPoints, maxValidIndex) {
-                    detectTapGestures { offset ->
-                        val leftPadding = 110f
-                        val rightPadding = 50f
-                        val chartWidth = size.width - leftPadding - rightPadding
-                        val relX = (offset.x - leftPadding).coerceIn(0f, chartWidth)
-                        val step = chartWidth / (dataPoints.size - 1).coerceAtLeast(1)
-                        val index = (relX / step).toInt().coerceIn(0, maxValidIndex)
-                        selectedIndex = index
-                        isTouching = true
-                    }
-                }
-                .pointerInput(dataPoints, maxValidIndex) {
-                    detectDragGestures(
-                        onDragStart = { offset ->
+                    detectTapGestures(
+                        onPress = { offset ->
+                            hideJob?.cancel()
+                            isLineVisible = true
                             val leftPadding = 110f
                             val rightPadding = 50f
                             val chartWidth = size.width - leftPadding - rightPadding
@@ -99,10 +94,43 @@ fun InteractiveViewsOverTimeChart(
                             val step = chartWidth / (dataPoints.size - 1).coerceAtLeast(1)
                             val index = (relX / step).toInt().coerceIn(0, maxValidIndex)
                             selectedIndex = index
-                            isTouching = true
+                            tryAwaitRelease()
+                            hideJob = coroutineScope.launch {
+                                delay(2500L)
+                                isLineVisible = false
+                            }
+                        }
+                    )
+                }
+                .pointerInput(dataPoints, maxValidIndex) {
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            hideJob?.cancel()
+                            isLineVisible = true
+                            val leftPadding = 110f
+                            val rightPadding = 50f
+                            val chartWidth = size.width - leftPadding - rightPadding
+                            val relX = (offset.x - leftPadding).coerceIn(0f, chartWidth)
+                            val step = chartWidth / (dataPoints.size - 1).coerceAtLeast(1)
+                            val index = (relX / step).toInt().coerceIn(0, maxValidIndex)
+                            selectedIndex = index
+                        },
+                        onDragEnd = {
+                            hideJob = coroutineScope.launch {
+                                delay(2500L)
+                                isLineVisible = false
+                            }
+                        },
+                        onDragCancel = {
+                            hideJob = coroutineScope.launch {
+                                delay(2500L)
+                                isLineVisible = false
+                            }
                         },
                         onDrag = { change, _ ->
                             change.consume()
+                            hideJob?.cancel()
+                            isLineVisible = true
                             val leftPadding = 110f
                             val rightPadding = 50f
                             val chartWidth = size.width - leftPadding - rightPadding
@@ -110,7 +138,6 @@ fun InteractiveViewsOverTimeChart(
                             val step = chartWidth / (dataPoints.size - 1).coerceAtLeast(1)
                             val index = (relX / step).toInt().coerceIn(0, maxValidIndex)
                             selectedIndex = index
-                            isTouching = true
                         }
                     )
                 }
@@ -191,8 +218,8 @@ fun InteractiveViewsOverTimeChart(
                 strokeWidth = 3.2.dp.toPx()
             )
 
-            // 4. Draw Interactive Scrubber / Pointer Tooltip if user touched/scrubbed
-            if (isTouching && selectedIndex in 0..maxValidIndex && dataPoints[selectedIndex].viewsThisReel >= 0f) {
+            // 4. Draw Interactive Scrubber / Pointer Tooltip when user touched/scrubbed
+            if (isLineVisible && selectedIndex in 0..maxValidIndex && dataPoints[selectedIndex].viewsThisReel >= 0f) {
                 val activePoint = dataPoints[selectedIndex]
                 val coords = getCoordinates(selectedIndex, activePoint.viewsThisReel)
 

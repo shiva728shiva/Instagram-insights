@@ -1,0 +1,41 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="18dp"
+    android:height="18dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Instagram Edits Gradient Reel Badge -->
+    <path
+        android:pathData="M6,3 L18,3 C19.66,3 21,4.34 21,6 L21,18 C21,19.66 19.66,21 18,21 L6,21 C4.34,21 3,19.66 3,18 L3,6 C3,4.34 4.34,3 6,3 Z"
+        android:strokeWidth="2.5"
+        android:fillColor="#00000000">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="3"
+                android:startY="21"
+                android:endX="21"
+                android:endY="3"
+                android:type="linear">
+                <item android:color="#FEE440" android:offset="0.0" />
+                <item android:color="#FF007A" android:offset="0.6" />
+                <item android:color="#7928CA" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:pathData="M9,7 L9,17"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="9"
+                android:startY="17"
+                android:endX="9"
+                android:endY="7"
+                android:type="linear">
+                <item android:color="#FF9E00" android:offset="0.0" />
+                <item android:color="#FF007A" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+</vector>

@@ -183,13 +183,16 @@ object ProfileRepository {
         }
 
         val defaultInsights = createDynamicInsights(
-            views = 1379,
-            likes = 3,
-            viewers = 362,
-            caption = "IG model @piperrockelle recently sparked attentio ...",
+            views = 1520,
+            likes = 6,
+            viewers = 410,
+            caption = "@higgsfield.ai — every new universe can change t ...",
             thumb = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80",
             avgWatchTime = "16s",
-            reshares = 1
+            reshares = 0
+        ).copy(
+            handle = "costflorarprim1974",
+            musicTitle = "AI content"
         )
 
         val reelsList = listOf(
@@ -219,13 +222,13 @@ object ProfileRepository {
             ReelItem(
                 id = "reel_2",
                 thumbnailUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80",
-                viewsCount = 1379,
-                likesCount = 3,
+                viewsCount = 1520,
+                likesCount = 6,
                 commentsCount = 0,
-                resharesCount = 1,
+                resharesCount = 0,
                 sendsCount = 0,
                 savesCount = 0,
-                caption = "IG model @piperrockelle recently sparked attentio ...",
+                caption = "@higgsfield.ai — every new universe can change t ...",
                 topOverlayText = "",
                 watermarks = emptyList(),
                 insightsData = defaultInsights

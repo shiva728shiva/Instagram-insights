@@ -26,6 +26,7 @@ data class RetentionPoint(
 data class ReelInsightsData(
     val caption: String = "studio session, take 12 🎬",
     val handle: String = "your.page",
+    val musicTitle: String = "Original audio",
     val thumbnailUrl: String = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80",
     val videoUri: String? = null,
     val videoDurationMs: Long = 8000L,

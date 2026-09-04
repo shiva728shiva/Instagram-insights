@@ -12,8 +12,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -40,7 +43,9 @@ fun InteractiveWhenLikedChart(
     onInteractingChange: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var isTouching by remember { mutableStateOf(false) }
+    var isLineVisible by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    var hideJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
 
     Box(
         modifier = modifier
@@ -54,7 +59,8 @@ fun InteractiveWhenLikedChart(
                 .pointerInput(likePoints) {
                     detectTapGestures(
                         onPress = { offset ->
-                            isTouching = true
+                            hideJob?.cancel()
+                            isLineVisible = true
                             onInteractingChange(true)
                             val leftPadding = 40f
                             val rightPadding = 40f
@@ -64,41 +70,52 @@ fun InteractiveWhenLikedChart(
                             val index = (relX / step).toInt().coerceIn(0, likePoints.size - 1)
                             onIndexChange(index)
                             tryAwaitRelease()
-                            isTouching = false
                             onInteractingChange(false)
+                            hideJob = coroutineScope.launch {
+                                delay(2500L)
+                                isLineVisible = false
+                            }
                         }
                     )
                 }
                 .pointerInput(likePoints) {
                     detectDragGestures(
                         onDragStart = { offset ->
+                            hideJob?.cancel()
+                            isLineVisible = true
                             val leftPadding = 40f
                             val rightPadding = 40f
                             val chartWidth = size.width - leftPadding - rightPadding
                             val relX = (offset.x - leftPadding).coerceIn(0f, chartWidth)
                             val step = chartWidth / (likePoints.size - 1).coerceAtLeast(1)
                             val index = (relX / step).toInt().coerceIn(0, likePoints.size - 1)
-                            isTouching = true
                             onInteractingChange(true)
                             onIndexChange(index)
                         },
                         onDragEnd = {
-                            isTouching = false
                             onInteractingChange(false)
+                            hideJob = coroutineScope.launch {
+                                delay(2500L)
+                                isLineVisible = false
+                            }
                         },
                         onDragCancel = {
-                            isTouching = false
                             onInteractingChange(false)
+                            hideJob = coroutineScope.launch {
+                                delay(2500L)
+                                isLineVisible = false
+                            }
                         },
                         onDrag = { change, _ ->
                             change.consume()
+                            hideJob?.cancel()
+                            isLineVisible = true
                             val leftPadding = 40f
                             val rightPadding = 40f
                             val chartWidth = size.width - leftPadding - rightPadding
                             val relX = (change.position.x - leftPadding).coerceIn(0f, chartWidth)
                             val step = chartWidth / (likePoints.size - 1).coerceAtLeast(1)
                             val index = (relX / step).toInt().coerceIn(0, likePoints.size - 1)
-                            isTouching = true
                             onInteractingChange(true)
                             onIndexChange(index)
                         }
@@ -145,9 +162,9 @@ fun InteractiveWhenLikedChart(
                 strokeWidth = 3.dp.toPx()
             )
 
-            // 3. Draw active scrubber vertical line & tooltip ONLY when user is touching/scrubbing
+            // 3. Draw active scrubber vertical line & tooltip when user is touching/scrubbing (and stays visible for a moment)
             val activeIdx = selectedIndex
-            if (isTouching && activeIdx != null && activeIdx in likePoints.indices) {
+            if (isLineVisible && activeIdx != null && activeIdx in likePoints.indices) {
                 val activeVal = likePoints[activeIdx]
                 val coords = getCoords(activeIdx, activeVal)
 
