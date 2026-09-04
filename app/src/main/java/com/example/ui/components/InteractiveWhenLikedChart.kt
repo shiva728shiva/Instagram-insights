@@ -145,9 +145,9 @@ fun InteractiveWhenLikedChart(
                 strokeWidth = 3.dp.toPx()
             )
 
-            // 3. Draw active scrubber vertical line & tooltip when user touches/scrubs
+            // 3. Draw active scrubber vertical line & tooltip ONLY when user is touching/scrubbing
             val activeIdx = selectedIndex
-            if (activeIdx != null && activeIdx in likePoints.indices && (isTouching || selectedIndex != null)) {
+            if (isTouching && activeIdx != null && activeIdx in likePoints.indices) {
                 val activeVal = likePoints[activeIdx]
                 val coords = getCoords(activeIdx, activeVal)
 

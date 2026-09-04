@@ -191,9 +191,9 @@ fun InteractiveRetentionChart(
                 strokeWidth = 2.8.dp.toPx()
             )
 
-            // 3. Draw active scrubber vertical line & tooltip when user touches/scrubs
+            // 3. Draw active scrubber vertical line & tooltip ONLY when user is touching/scrubbing
             val activeIdx = selectedIndex
-            if (activeIdx != null && activeIdx in retentionPoints.indices && (isTouching || selectedIndex != null)) {
+            if (isTouching && activeIdx != null && activeIdx in retentionPoints.indices) {
                 val activePoint = retentionPoints[activeIdx]
                 val coords = getCoords(activeIdx, activePoint.percent)
 
@@ -202,7 +202,7 @@ fun InteractiveRetentionChart(
                 val bubbleX = (coords.x - bubbleWidth / 2).coerceIn(leftPadding, width - rightPadding - bubbleWidth)
                 val bubbleY = 2.dp.toPx()
 
-                // Vertical dashed guide line from bottom of tooltip down across chart to 0% line
+                // Simple vertical dashed guide line - NO pink point at intersection
                 drawLine(
                     color = Color.White.copy(alpha = 0.55f),
                     start = Offset(coords.x, bubbleY + bubbleHeight),

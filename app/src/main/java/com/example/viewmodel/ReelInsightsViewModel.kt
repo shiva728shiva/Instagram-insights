@@ -300,6 +300,19 @@ class ReelInsightsViewModel : ViewModel() {
         _data.value = defaultReel.insightsData
     }
 
+    fun importReel(reelItem: ReelItem) {
+        _userProfile.update { current ->
+            val updatedReels = listOf(reelItem) + current.reels
+            current.copy(
+                reels = updatedReels,
+                postsCount = current.postsCount + 1
+            )
+        }
+        _activeReel.value = reelItem
+        _data.value = reelItem.insightsData
+        _currentScreen.value = AppScreen.REEL_INSIGHTS
+    }
+
     fun loadSelectedVideo(context: android.content.Context, uri: android.net.Uri) {
         viewModelScope.launch {
             _isLoading.value = true

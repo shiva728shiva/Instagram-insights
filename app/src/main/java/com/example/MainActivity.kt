@@ -24,11 +24,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ui.screens.EditDemographicsDialog
 import com.example.ui.screens.EditProfileDialog
 import com.example.ui.screens.EditorBottomSheet
+import com.example.ui.screens.ImportReelDialog
 import com.example.ui.screens.InsightsScreen
 import com.example.ui.screens.ProfileScreen
 import com.example.ui.screens.ReelPlayerScreen
 import com.example.ui.screens.UsernamePromptDialog
-import com.example.ui.screens.VideoSelectionPromptDialog
 import com.example.ui.theme.IgBackground
 import com.example.ui.theme.MyApplicationTheme
 import com.example.viewmodel.AppScreen
@@ -187,12 +187,16 @@ fun ReelInsightsApp(
             )
         }
 
-        // Instagram Video Selection & Storage Permission Dialog
+        // Instagram Video Selection & Reel Link Import Dialog
         if (showVideoPickerPrompt) {
-            VideoSelectionPromptDialog(
+            ImportReelDialog(
+                currentUsername = userProfile.username,
                 onDismiss = { showVideoPickerPrompt = false },
                 onVideoSelected = { uri ->
                     viewModel.loadSelectedVideo(context, uri)
+                },
+                onReelImported = { reel ->
+                    viewModel.importReel(reel)
                 }
             )
         }

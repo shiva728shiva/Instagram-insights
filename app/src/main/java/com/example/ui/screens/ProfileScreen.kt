@@ -409,7 +409,7 @@ fun ProfileScreen(
                                 .testTag("select_video_profile_btn")
                         ) {
                             Text(
-                                text = "Select Video",
+                                text = "Import Reel",
                                 fontSize = 12.5.sp,
                                 fontWeight = FontWeight.Bold
                             )

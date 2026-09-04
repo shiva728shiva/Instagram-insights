@@ -55,9 +55,9 @@ fun FrameScrubVideoPreview(
     scrubSecond: Int,
     timeLabel: String = "",
     showPlayIcon: Boolean = true,
-    width: Dp = 92.dp,
-    height: Dp = 164.dp,
-    cornerRadius: Dp = 8.dp,
+    width: Dp = 72.dp,
+    height: Dp = 126.dp,
+    cornerRadius: Dp = 6.dp,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -157,23 +157,23 @@ fun FrameScrubVideoPreview(
             }
         }
 
-        // Instagram Hollow Outlined Play Icon with delicately rounded corners matching real Instagram
+        // Instagram Hollow Outlined Play Icon - small, delicate, and rounded matching real Instagram
         if (showPlayIcon && !isPlaying) {
             androidx.compose.foundation.Canvas(
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier.size(16.dp)
             ) {
                 val cx = size.width / 2
                 val cy = size.height / 2
 
                 // Visual center offset so triangle center-of-mass aligns with thumbnail center
-                val offsetVisual = 1.0.dp.toPx()
-                val v1 = Offset(cx - 7.0.dp.toPx() + offsetVisual, cy - 8.5.dp.toPx()) // top-left
-                val v2 = Offset(cx + 8.5.dp.toPx() + offsetVisual, cy)                 // right tip
-                val v3 = Offset(cx - 7.0.dp.toPx() + offsetVisual, cy + 8.5.dp.toPx()) // bottom-left
+                val offsetVisual = 0.8.dp.toPx()
+                val v1 = Offset(cx - 4.8.dp.toPx() + offsetVisual, cy - 5.8.dp.toPx()) // top-left
+                val v2 = Offset(cx + 5.8.dp.toPx() + offsetVisual, cy)                 // right tip
+                val v3 = Offset(cx - 4.8.dp.toPx() + offsetVisual, cy + 5.8.dp.toPx()) // bottom-left
 
                 // Distinct rounded corner radius (tip has soft roundness as in real IG)
-                val crTip = 3.6.dp.toPx()
-                val crBase = 2.6.dp.toPx()
+                val crTip = 2.4.dp.toPx()
+                val crBase = 1.8.dp.toPx()
 
                 val d12 = kotlin.math.hypot((v2.x - v1.x).toDouble(), (v2.y - v1.y).toDouble()).toFloat()
                 val u12 = Offset((v2.x - v1.x) / d12, (v2.y - v1.y) / d12)
@@ -209,7 +209,7 @@ fun FrameScrubVideoPreview(
                     path = playPath,
                     color = Color.White.copy(alpha = 0.95f),
                     style = androidx.compose.ui.graphics.drawscope.Stroke(
-                        width = 1.8.dp.toPx(),
+                        width = 1.5.dp.toPx(),
                         cap = androidx.compose.ui.graphics.StrokeCap.Round,
                         join = androidx.compose.ui.graphics.StrokeJoin.Round
                     )
