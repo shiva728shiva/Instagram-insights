@@ -69,7 +69,7 @@ object InstagramLinkFetcher {
     }
 
     /**
-     * Attempts network extraction using public endpoints and HTML metadata.
+     * Attempts network extraction and downloads the actual MP4 video file to cache.
      * Never returns fake hardcoded numbers.
      */
     suspend fun fetchReelInfo(
@@ -90,121 +90,122 @@ object InstagramLinkFetcher {
         var localVideoUri: Uri? = null
         var isReal = false
 
-        // Attempt 1: Fetch via public Instagram oEmbed API
+        // Primary: Run multi-layer Instagram Reel video downloader
         try {
-            val oembedUrl = "https://api.instagram.com/oembed/?url=$cleanUrl"
-            val request = Request.Builder()
-                .url(oembedUrl)
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-                .build()
-
-            val response = httpClient.newCall(request).execute()
-            if (response.isSuccessful) {
-                val body = response.body?.string()
-                if (!body.isNullOrBlank()) {
-                    val json = JSONObject(body)
-                    if (json.has("author_name")) {
-                        val author = json.optString("author_name")
-                        if (author.isNotBlank()) extractedUsername = author
-                    }
-                    if (json.has("title")) {
-                        val title = json.optString("title")
-                        if (title.isNotBlank()) extractedCaption = title
-                    }
-                    if (json.has("thumbnail_url")) {
-                        thumbnailUrl = json.optString("thumbnail_url")
-                    }
-                    isReal = true
-                }
+            val downloadResult = InstagramVideoDownloader.downloadReel(context, cleanUrl)
+            if (downloadResult.localVideoUri != null) {
+                localVideoUri = downloadResult.localVideoUri
+                videoUrl = downloadResult.videoUrl
+                isReal = true
             }
+            if (!downloadResult.thumbnailUrl.isNullOrBlank()) thumbnailUrl = downloadResult.thumbnailUrl
+            if (!downloadResult.username.isNullOrBlank()) extractedUsername = downloadResult.username
+            if (!downloadResult.caption.isNullOrBlank()) extractedCaption = downloadResult.caption
+            if (downloadResult.likes != null && downloadResult.likes > 0) extractedLikes = downloadResult.likes
+            if (downloadResult.comments != null && downloadResult.comments > 0) extractedComments = downloadResult.comments
+            if (downloadResult.views != null && downloadResult.views > 0) extractedViews = downloadResult.views
         } catch (e: Exception) {
-            Log.d(TAG, "oEmbed fetch notice: ${e.message}")
+            Log.d(TAG, "Downloader layer note: ${e.message}")
         }
 
-        // Attempt 2: Fetch via captioned embed page for rich public metadata
-        try {
-            val embedUrl = "https://www.instagram.com/p/$shortcode/embed/captioned/?_fb_noscript=1"
-            val request = Request.Builder()
-                .url(embedUrl)
-                .header("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15")
-                .header("Accept", "text/html,application/xhtml+xml,application/xml")
-                .build()
-
-            val response = httpClient.newCall(request).execute()
-            if (response.isSuccessful) {
-                val html = response.body?.string() ?: ""
-                if (html.isNotBlank()) {
-                    val userMatch = Pattern.compile("username\":\\s*\"([^\"]+)\"|data-owner-username=\"([^\"]+)\"").matcher(html)
-                    if (userMatch.find()) {
-                        val u = userMatch.group(1) ?: userMatch.group(2)
-                        if (!u.isNullOrBlank()) extractedUsername = u
-                    }
-
-                    val capMatch = Pattern.compile("<div class=\"Caption\"[^>]*>(.*?)</div>", Pattern.DOTALL).matcher(html)
-                    if (capMatch.find()) {
-                        val c = capMatch.group(1)?.replace(Regex("<[^>]+>"), "")?.trim()
-                        if (!c.isNullOrBlank()) extractedCaption = c
-                    }
-
-                    // Extract actual likes
-                    val likesMatch = Pattern.compile("([0-9,.]+)\\s*likes", Pattern.CASE_INSENSITIVE).matcher(html)
-                    if (likesMatch.find()) {
-                        val lStr = likesMatch.group(1)?.replace(",", "")?.replace(".", "")
-                        val parsedLikes = lStr?.toIntOrNull()
-                        if (parsedLikes != null && parsedLikes > 0) {
-                            extractedLikes = parsedLikes
-                            isReal = true
-                        }
-                    }
-
-                    // Extract actual comments
-                    val commentsMatch = Pattern.compile("([0-9,.]+)\\s*comments", Pattern.CASE_INSENSITIVE).matcher(html)
-                    if (commentsMatch.find()) {
-                        val cStr = commentsMatch.group(1)?.replace(",", "")?.replace(".", "")
-                        val parsedComments = cStr?.toIntOrNull()
-                        if (parsedComments != null && parsedComments > 0) {
-                            extractedComments = parsedComments
-                            isReal = true
-                        }
-                    }
-
-                    // Extract thumbnail
-                    val imgMatch = Pattern.compile("https://[^\"'\\s]+\\.jpg[^\"'\\s]*").matcher(html)
-                    if (imgMatch.find()) {
-                        thumbnailUrl = imgMatch.group(0)?.replace("\\u0026", "&")
-                    }
-
-                    // Extract MP4
-                    val videoMatch = Pattern.compile("https://[^\"'\\s]+\\.mp4[^\"'\\s]*").matcher(html)
-                    if (videoMatch.find()) {
-                        videoUrl = videoMatch.group(0)?.replace("\\u0026", "&")
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.d(TAG, "Embed HTML fetch notice: ${e.message}")
-        }
-
-        // If direct video stream was captured, download into cache for real frame playback
-        if (!videoUrl.isNullOrBlank()) {
+        // Secondary: Fetch via public Instagram oEmbed API if metadata is still missing
+        if (extractedCaption == null || extractedUsername == null || thumbnailUrl == null) {
             try {
-                val videoFile = File(context.cacheDir, "ig_reel_${shortcode}.mp4")
-                val vidReq = Request.Builder().url(videoUrl!!).build()
-                val vidResp = httpClient.newCall(vidReq).execute()
-                if (vidResp.isSuccessful && vidResp.body != null) {
-                    val bytes = vidResp.body!!.bytes()
-                    if (bytes.isNotEmpty()) {
-                        FileOutputStream(videoFile).use { it.write(bytes) }
-                        localVideoUri = Uri.fromFile(videoFile)
+                val oembedUrl = "https://api.instagram.com/oembed/?url=$cleanUrl"
+                val request = Request.Builder()
+                    .url(oembedUrl)
+                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                    .build()
+
+                val response = httpClient.newCall(request).execute()
+                if (response.isSuccessful) {
+                    val body = response.body?.string()
+                    if (!body.isNullOrBlank()) {
+                        val json = JSONObject(body)
+                        if (json.has("author_name") && extractedUsername == null) {
+                            val author = json.optString("author_name")
+                            if (author.isNotBlank()) extractedUsername = author
+                        }
+                        if (json.has("title") && extractedCaption == null) {
+                            val title = json.optString("title")
+                            if (title.isNotBlank()) extractedCaption = title
+                        }
+                        if (json.has("thumbnail_url") && thumbnailUrl == null) {
+                            thumbnailUrl = json.optString("thumbnail_url")
+                        }
                         isReal = true
                     }
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Could not cache video stream: ${e.message}")
+                Log.d(TAG, "oEmbed fetch notice: ${e.message}")
             }
         }
 
-        val status = if (isReal) {
+        // Tertiary: Fetch via captioned embed page for rich public metadata if needed
+        if (extractedLikes == null || extractedComments == null) {
+            try {
+                val embedUrl = "https://www.instagram.com/p/$shortcode/embed/captioned/?_fb_noscript=1"
+                val request = Request.Builder()
+                    .url(embedUrl)
+                    .header("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15")
+                    .header("Accept", "text/html,application/xhtml+xml,application/xml")
+                    .build()
+
+                val response = httpClient.newCall(request).execute()
+                if (response.isSuccessful) {
+                    val html = response.body?.string() ?: ""
+                    if (html.isNotBlank()) {
+                        val userMatch = Pattern.compile("username\":\\s*\"([^\"]+)\"|data-owner-username=\"([^\"]+)\"").matcher(html)
+                        if (userMatch.find() && extractedUsername == null) {
+                            val u = userMatch.group(1) ?: userMatch.group(2)
+                            if (!u.isNullOrBlank()) extractedUsername = u
+                        }
+
+                        val capMatch = Pattern.compile("<div class=\"Caption\"[^>]*>(.*?)</div>", Pattern.DOTALL).matcher(html)
+                        if (capMatch.find() && extractedCaption == null) {
+                            val c = capMatch.group(1)?.replace(Regex("<[^>]+>"), "")?.trim()
+                            if (!c.isNullOrBlank()) extractedCaption = c
+                        }
+
+                        // Extract actual likes
+                        val likesMatch = Pattern.compile("([0-9,.]+)\\s*likes", Pattern.CASE_INSENSITIVE).matcher(html)
+                        if (likesMatch.find() && extractedLikes == null) {
+                            val lStr = likesMatch.group(1)?.replace(",", "")?.replace(".", "")
+                            val parsedLikes = lStr?.toIntOrNull()
+                            if (parsedLikes != null && parsedLikes > 0) {
+                                extractedLikes = parsedLikes
+                                isReal = true
+                            }
+                        }
+
+                        // Extract actual comments
+                        val commentsMatch = Pattern.compile("([0-9,.]+)\\s*comments", Pattern.CASE_INSENSITIVE).matcher(html)
+                        if (commentsMatch.find() && extractedComments == null) {
+                            val cStr = commentsMatch.group(1)?.replace(",", "")?.replace(".", "")
+                            val parsedComments = cStr?.toIntOrNull()
+                            if (parsedComments != null && parsedComments > 0) {
+                                extractedComments = parsedComments
+                                isReal = true
+                            }
+                        }
+
+                        // Extract thumbnail if missing
+                        if (thumbnailUrl == null) {
+                            val imgMatch = Pattern.compile("https://[^\"'\\s]+\\.jpg[^\"'\\s]*").matcher(html)
+                            if (imgMatch.find()) {
+                                thumbnailUrl = imgMatch.group(0)?.replace("\\u0026", "&")
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.d(TAG, "Embed HTML fetch notice: ${e.message}")
+            }
+        }
+
+        val status = if (isReal && localVideoUri != null) {
+            "Real Instagram Reel & Video downloaded successfully ✓"
+        } else if (isReal) {
             "Real Instagram Reel data detected ✓"
         } else {
             "Instagram link verified. Enter the exact Views and Likes from your Reel below for 100% accurate insights."

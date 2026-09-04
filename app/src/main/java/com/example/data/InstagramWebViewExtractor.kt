@@ -296,15 +296,21 @@ object InstagramWebViewExtractor {
     ): Uri? = withContext(Dispatchers.IO) {
         try {
             val file = File(context.cacheDir, "ig_reel_${shortcode}.mp4")
+            if (file.exists() && file.length() > 10_000) {
+                return@withContext Uri.fromFile(file)
+            }
             val req = Request.Builder()
                 .url(videoUrl)
                 .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
                 .build()
             val resp = httpClient.newCall(req).execute()
             if (resp.isSuccessful && resp.body != null) {
-                val bytes = resp.body!!.bytes()
-                if (bytes.isNotEmpty()) {
-                    FileOutputStream(file).use { it.write(bytes) }
+                resp.body!!.byteStream().use { input ->
+                    FileOutputStream(file).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                if (file.exists() && file.length() > 1000) {
                     return@withContext Uri.fromFile(file)
                 }
             }
