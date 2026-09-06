@@ -646,9 +646,9 @@ fun ReelGridItem(
 
 private fun formatViews(views: Int): String {
     return when {
-        views >= 1_000_000 -> String.format("%.1fM", views / 1_000_000.0)
-        views >= 10_000 -> String.format("%.1fK", views / 1000.0)
-        views >= 1000 -> String.format("%,d", views)
+        views >= 1_000_000 -> String.format(java.util.Locale.US, "%.1fM", views / 1_000_000.0)
+        views >= 10_000 -> String.format(java.util.Locale.US, "%.1fK", views / 1000.0)
+        views >= 1000 -> String.format(java.util.Locale.US, "%,d", views)
         else -> views.toString()
     }
 }

@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import android.media.MediaPlayer
 import android.net.Uri
 import android.widget.VideoView
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -39,6 +40,7 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -59,6 +61,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -68,6 +71,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
 import com.example.R
+import com.example.data.InstagramVideoDownloader
 import com.example.data.model.ReelItem
 import com.example.ui.components.IgIcons
 import com.example.ui.theme.IgPinkAccent
@@ -84,6 +88,7 @@ fun ReelPlayerScreen(
     onOpenEditor: () -> Unit,
     onSelectVideoClick: () -> Unit = {},
     onUpdateAvatar: (String) -> Unit = {},
+    onUpdateVideoUri: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var isPlaying by remember { mutableStateOf(true) }
@@ -104,9 +109,33 @@ fun ReelPlayerScreen(
         }
     }
 
-    val playableVideoUri = remember(reel) {
-        reel.insightsData.videoUri?.ifBlank { null }
-            ?: reel.videoUrl.ifBlank { null }
+    val context = LocalContext.current
+    var localVideoUriState by remember(reel.id, reel.insightsData.videoUri, reel.videoUrl) {
+        mutableStateOf(
+            reel.insightsData.videoUri?.ifBlank { null }
+                ?: reel.videoUrl.ifBlank { null }
+        )
+    }
+    var isAutoDownloading by remember { mutableStateOf(false) }
+
+    // Automatically download reel video if not cached yet so it plays seamlessly!
+    LaunchedEffect(reel.id, localVideoUriState) {
+        if (localVideoUriState == null) {
+            isAutoDownloading = true
+            try {
+                val link = if (reel.thumbnailUrl.startsWith("http")) reel.thumbnailUrl else reel.id
+                val res = InstagramVideoDownloader.downloadReel(context, link)
+                if (res.localVideoUri != null) {
+                    val uriStr = res.localVideoUri.toString()
+                    localVideoUriState = uriStr
+                    onUpdateVideoUri(uriStr)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("ReelPlayerScreen", "Auto-download failed: ${e.message}")
+            } finally {
+                isAutoDownloading = false
+            }
+        }
     }
 
     // Subtle gentle zoom animation when using image fallback
@@ -130,9 +159,9 @@ fun ReelPlayerScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(playableVideoUri) {
+                .pointerInput(localVideoUriState) {
                     detectTapGestures {
-                        if (playableVideoUri != null) {
+                        if (localVideoUriState != null) {
                             isPlaying = !isPlaying
                             showTempActionIndicator = true
                             hideIndicatorJob?.cancel()
@@ -146,22 +175,28 @@ fun ReelPlayerScreen(
                     }
                 }
         ) {
-            if (playableVideoUri != null) {
+            if (localVideoUriState != null) {
                 AndroidView(
                     factory = { ctx ->
                         VideoView(ctx).apply {
-                            val uri = if (playableVideoUri.startsWith("/")) {
-                                Uri.fromFile(java.io.File(playableVideoUri))
+                            val uri = if (localVideoUriState!!.startsWith("/")) {
+                                Uri.fromFile(java.io.File(localVideoUriState!!))
                             } else {
-                                Uri.parse(playableVideoUri)
+                                Uri.parse(localVideoUriState!!)
                             }
                             setVideoURI(uri)
                             setOnPreparedListener { mp ->
                                 mp.isLooping = true
                                 mp.setVolume(1f, 1f)
+                                try {
+                                    mp.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
+                                } catch (_: Exception) {}
                                 if (isPlaying) start()
                             }
-                            setOnErrorListener { _, _, _ -> true }
+                            setOnErrorListener { _, what, extra ->
+                                android.util.Log.e("ReelPlayer", "Video error: what=$what, extra=$extra")
+                                true // Handled: suppresses system "Can't play this video" alert dialog
+                            }
                             videoViewRef = this
                         }
                     },
@@ -175,7 +210,7 @@ fun ReelPlayerScreen(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                DisposableEffect(playableVideoUri) {
+                DisposableEffect(localVideoUriState) {
                     onDispose {
                         videoViewRef?.stopPlayback()
                     }
@@ -308,11 +343,45 @@ fun ReelPlayerScreen(
             }
         }
 
+        // Auto-download indicator banner
+        AnimatedVisibility(
+            visible = isAutoDownloading,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .statusBarsPadding()
+                .padding(top = 58.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color.Black.copy(alpha = 0.75f))
+                    .border(0.5.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CircularProgressIndicator(
+                    color = Color.White,
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(13.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Downloading Reel video for smooth playback...",
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+
         // 3. Right-Side Action Icons Column (Heart, Comment, Repost, Share, Bookmark, More, Audio Artwork)
         Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 12.dp, bottom = 74.dp),
+                .navigationBarsPadding()
+                .padding(end = 12.dp, bottom = 68.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
@@ -330,13 +399,15 @@ fun ReelPlayerScreen(
                     tint = if (isLiked) Color(0xFFFF2D55) else Color.White,
                     modifier = Modifier.size(28.dp)
                 )
-                Text(
-                    text = formatViewsShort(likesCount),
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
-                    modifier = Modifier.padding(top = 3.dp)
-                )
+                if (likesCount > 0) {
+                    Text(
+                        text = formatViewsShort(likesCount),
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                        modifier = Modifier.padding(top = 3.dp)
+                    )
+                }
             }
 
             // 2. Comment Button (In real IG, no number is displayed if 0)
@@ -447,7 +518,8 @@ fun ReelPlayerScreen(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .fillMaxWidth(0.72f)
-                .padding(start = 14.dp, bottom = 74.dp)
+                .navigationBarsPadding()
+                .padding(start = 14.dp, bottom = 68.dp)
         ) {
             // Avatar + Username + Audio Row
             Row(
@@ -524,7 +596,7 @@ fun ReelPlayerScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
-                .background(Color.Black)
+                .background(Color.Transparent)
                 .navigationBarsPadding()
                 .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {

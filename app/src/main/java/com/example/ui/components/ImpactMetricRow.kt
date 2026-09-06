@@ -79,7 +79,7 @@ fun ImpactMetricRow(
                 horizontalAlignment = Alignment.End
             ) {
                 Text(
-                    text = String.format("%.1f%%", value),
+                    text = String.format(java.util.Locale.US, "%.1f%%", value),
                     fontSize = 15.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = IgTextPrimary

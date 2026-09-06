@@ -107,6 +107,9 @@ fun ReelInsightsApp(
                         },
                         onUpdateAvatar = { uri ->
                             viewModel.updateProfile(avatarUrl = uri)
+                        },
+                        onUpdateVideoUri = { uri ->
+                            viewModel.updateActiveReelVideoUri(uri)
                         }
                     )
                 }

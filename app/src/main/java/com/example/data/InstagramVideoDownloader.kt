@@ -330,7 +330,8 @@ object InstagramVideoDownloader {
      */
     private fun downloadStreamToFile(context: Context, videoUrl: String, prefix: String): Uri? {
         return try {
-            val cacheFile = File(context.cacheDir, "ig_reel_${prefix}.mp4")
+            val safePrefix = prefix.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(40)
+            val cacheFile = File(context.cacheDir, "ig_reel_${safePrefix}.mp4")
 
             // If already downloaded and valid (>10KB), reuse it instantly
             if (cacheFile.exists() && cacheFile.length() > 10_000) {
@@ -345,12 +346,15 @@ object InstagramVideoDownloader {
 
             val resp = httpClient.newCall(req).execute()
             if (resp.isSuccessful && resp.body != null) {
+                val tempFile = File(context.cacheDir, "temp_ig_reel_${safePrefix}_${System.currentTimeMillis()}.mp4")
                 resp.body!!.byteStream().use { input ->
-                    FileOutputStream(cacheFile).use { output ->
+                    FileOutputStream(tempFile).use { output ->
                         input.copyTo(output)
                     }
                 }
-                if (cacheFile.exists() && cacheFile.length() > 1000) {
+                if (tempFile.exists() && tempFile.length() > 1000) {
+                    if (cacheFile.exists()) cacheFile.delete()
+                    tempFile.renameTo(cacheFile)
                     Log.d(TAG, "Successfully downloaded reel video to: ${cacheFile.absolutePath} (${cacheFile.length()} bytes)")
                     return Uri.fromFile(cacheFile)
                 }

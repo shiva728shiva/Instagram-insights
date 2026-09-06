@@ -310,7 +310,27 @@ class ReelInsightsViewModel : ViewModel() {
         }
         _activeReel.value = reelItem
         _data.value = reelItem.insightsData
-        _currentScreen.value = AppScreen.REEL_INSIGHTS
+        _currentScreen.value = AppScreen.REEL_FEED
+    }
+
+    fun updateActiveReelVideoUri(videoUri: String) {
+        _activeReel.update { current ->
+            current.copy(
+                videoUrl = videoUri,
+                insightsData = current.insightsData.copy(videoUri = videoUri)
+            )
+        }
+        _userProfile.update { current ->
+            val updatedReels = current.reels.map { reel ->
+                if (reel.id == _activeReel.value.id) {
+                    reel.copy(
+                        videoUrl = videoUri,
+                        insightsData = reel.insightsData.copy(videoUri = videoUri)
+                    )
+                } else reel
+            }
+            current.copy(reels = updatedReels)
+        }
     }
 
     fun loadSelectedVideo(context: android.content.Context, uri: android.net.Uri) {

@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -167,6 +168,8 @@ fun ImportReelDialog(
         permissionsLauncher.launch(permissions)
     }
 
+    var downloadStatusText by remember { mutableStateOf("") }
+
     fun triggerFetch(urlToFetch: String) {
         val trimmed = urlToFetch.trim()
         if (trimmed.isBlank()) {
@@ -178,27 +181,23 @@ fun ImportReelDialog(
         currentShortcode = code
         isFetching = true
         hasFetched = false
+        downloadStatusText = "Connecting & downloading reel video..."
 
-        // Launch in-app WebView extractor to inspect real OpenGraph and network video streams
-        InstagramWebViewExtractor.extractRealReel(
-            context = context,
-            reelUrl = trimmed
-        ) { webResult ->
-            coroutineScope.launch {
-                // Also check oEmbed in parallel
-                val netResult = try {
-                    InstagramLinkFetcher.fetchReelInfo(context, trimmed, currentUsername)
-                } catch (_: Exception) {
-                    null
+        coroutineScope.launch {
+            try {
+                val netResult = InstagramLinkFetcher.fetchReelInfo(context, trimmed, currentUsername)
+
+                if (netResult.localVideoUri != null) {
+                    attachedVideoUri = netResult.localVideoUri
+                    downloadStatusText = "Reel video downloaded successfully! ✓"
                 }
 
-                val likes = webResult.likesCount ?: netResult?.likesCount
-                val comments = webResult.commentsCount ?: netResult?.commentsCount
-                val views = webResult.viewsCount ?: netResult?.viewsCount
-                val caption = webResult.caption ?: netResult?.caption
-                val username = webResult.username ?: netResult?.username ?: currentUsername
-                val thumb = webResult.thumbnailUrl ?: netResult?.thumbnailUrl
-                val vid = webResult.videoUrl ?: netResult?.videoUrl
+                val likes = netResult.likesCount
+                val comments = netResult.commentsCount
+                val views = netResult.viewsCount
+                val caption = netResult.caption
+                val username = netResult.username ?: currentUsername
+                val thumb = netResult.thumbnailUrl
 
                 if (likes != null && likes > 0) {
                     editableLikes = likes.toString()
@@ -222,16 +221,11 @@ fun ImportReelDialog(
                     fetchedThumbUrl = thumb
                 }
 
-                // If a direct video URL was captured from the network, download it into cache
-                if (!vid.isNullOrBlank()) {
-                    val downloadedUri = InstagramWebViewExtractor.downloadVideoToCache(context, vid, code)
-                    if (downloadedUri != null) {
-                        attachedVideoUri = downloadedUri
-                    }
-                }
-
-                isRealDataDetected = webResult.isRealDataFetched || (netResult?.isRealExtracted == true)
+                isRealDataDetected = netResult.isRealExtracted || (attachedVideoUri != null)
                 hasFetched = true
+            } catch (e: Exception) {
+                Log.e("ImportReelDialog", "Error fetching reel", e)
+            } finally {
                 isFetching = false
             }
         }
@@ -433,11 +427,15 @@ fun ImportReelDialog(
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Extracting Real Reel from Instagram...", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                text = downloadStatusText.ifBlank { "Downloading Reel video..." },
+                                fontSize = 13.5.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
                         } else {
                             Icon(Icons.Default.Link, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Fetch Reel Data", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text("Fetch & Download Reel", fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         }
                     }
 
@@ -459,17 +457,17 @@ fun ImportReelDialog(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
-                                        imageVector = if (isRealDataDetected) Icons.Default.CheckCircle else Icons.Default.Info,
+                                        imageVector = if (attachedVideoUri != null) Icons.Default.CheckCircle else if (isRealDataDetected) Icons.Default.CheckCircle else Icons.Default.Info,
                                         contentDescription = null,
-                                        tint = if (isRealDataDetected) Color(0xFF4BB543) else Color(0xFF0095F6),
+                                        tint = if (attachedVideoUri != null || isRealDataDetected) Color(0xFF4BB543) else Color(0xFF0095F6),
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = if (isRealDataDetected) "Real Reel Data Detected ✓" else "Confirm Real Reel Data (Zero Assumptions)",
+                                        text = if (attachedVideoUri != null) "Reel Video Downloaded ✓ (Ready to Play)" else if (isRealDataDetected) "Real Reel Data Detected ✓" else "Confirm Real Reel Data",
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (isRealDataDetected) Color(0xFF4BB543) else IgTextPrimary
+                                        color = if (attachedVideoUri != null || isRealDataDetected) Color(0xFF4BB543) else IgTextPrimary
                                     )
                                 }
 
@@ -488,14 +486,14 @@ fun ImportReelDialog(
                                         .height(44.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Videocam,
+                                        imageVector = if (attachedVideoUri != null) Icons.Default.CheckCircle else Icons.Default.Videocam,
                                         contentDescription = null,
                                         tint = if (attachedVideoUri != null) Color(0xFF4BB543) else Color(0xFF0095F6),
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = if (attachedVideoUri != null) "Real Reel Video Loaded ✓" else "Attach Reel Video File (MP4)",
+                                        text = if (attachedVideoUri != null) "Reel Video Downloaded & Attached ✓" else "Attach / Replace Video (MP4)",
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold
                                     )
