@@ -38,18 +38,45 @@ object InstagramVideoDownloader {
      * - https://www.instagram.com/reels/C3b4X.../
      * - https://instagr.am/reel/C3b4X.../
      */
+    fun sanitizeVideoUrl(rawUrl: String): String {
+        return rawUrl
+            .replace("\\/", "/")
+            .replace("\\\\/", "/")
+            .replace("\\u0026", "&")
+            .replace("&amp;", "&")
+            .replace("\\u00253D", "=")
+            .replace("\\u00253d", "=")
+            .replace("%253D", "=")
+            .replace("%253d", "=")
+            .replace("\\u0025", "%")
+            .replace("\\=", "=")
+            .trimEnd('\\', '"', '\'', ' ', '\n', '\r')
+    }
+
     fun extractShortcode(url: String): String? {
-        val pattern = Pattern.compile("(?:reel|reels|p)/([A-Za-z0-9_-]+)")
-        val matcher = pattern.matcher(url)
-        return if (matcher.find()) {
-            matcher.group(1)
-        } else {
-            // Check if user entered just the shortcode directly
-            val trimmed = url.trim().removePrefix("@")
-            if (trimmed.length in 5..30 && !trimmed.contains("/") && !trimmed.contains(".")) {
-                trimmed
-            } else null
+        val clean = url.trim()
+        if (clean.isEmpty()) return null
+
+        val pattern = Pattern.compile("(?:reel|reels|p|share/reel)/([A-Za-z0-9_-]+)")
+        val matcher = pattern.matcher(clean)
+        if (matcher.find()) {
+            return matcher.group(1)
         }
+
+        // Support direct shortcode with query params or slashes, e.g. "Dc6EP5KP_pA/?stkn=..." or "Dc6EP5KP_pA"
+        val firstSegment = clean.split('?', '&', '#')[0].trim().trimEnd('/')
+        val lastPath = firstSegment.substringAfterLast('/')
+        val candidate = lastPath.trim()
+        if (candidate.matches(Regex("^[a-zA-Z0-9_-]{5,30}$"))) {
+            return candidate
+        }
+
+        val generalMatcher = Pattern.compile("([a-zA-Z0-9_-]{9,15})").matcher(clean)
+        if (generalMatcher.find()) {
+            return generalMatcher.group(1)
+        }
+
+        return null
     }
 
     data class DownloadResult(
@@ -67,6 +94,7 @@ object InstagramVideoDownloader {
     /**
      * Downloads an Instagram Reel into local app cache and returns the local file Uri.
      * Uses a multi-layered extraction strategy:
+     * 0. Direct Instagram Embed Extraction (Extracts live CDN MP4 streams directly)
      * 1. Direct Instagram Web API with Official App ID (X-IG-App-ID)
      * 2. Social Preview Scraper (facebookexternalhit / Twitterbot) to extract og:video
      * 3. Script JSON tag regex extraction
@@ -90,6 +118,93 @@ object InstagramVideoDownloader {
         var extractedLikes: Int? = null
         var extractedComments: Int? = null
         var extractedViews: Int? = null
+
+        // --- LAYER 0: Direct Instagram Embed Extraction (Most reliable for public reels) ---
+        try {
+            onProgress?.invoke("Extracting real Instagram reel video stream...")
+            val embedEndpoints = listOf(
+                "https://www.instagram.com/p/$shortcode/embed/",
+                "https://www.instagram.com/reel/$shortcode/embed/"
+            )
+            for (embedUrl in embedEndpoints) {
+                if (extractedVideoUrl != null) break
+                try {
+                    val req = Request.Builder()
+                        .url(embedUrl)
+                        .header("User-Agent", "curl/7.88.1")
+                        .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+                        .build()
+
+                    val resp = httpClient.newCall(req).execute()
+                    if (resp.isSuccessful) {
+                        val html = resp.body?.string() ?: ""
+                        // 1. Extract MP4 video URL
+                        val mp4Pattern = Pattern.compile("(https?:[\\\\/]+[^\\s\"'<>]+\\.mp4[^\\s\"'<>]*)")
+                        val mp4Matcher = mp4Pattern.matcher(html)
+                        if (mp4Matcher.find()) {
+                            val rawUrl = mp4Matcher.group(1)
+                            val cleanMp4Url = sanitizeVideoUrl(rawUrl)
+                            if (cleanMp4Url.startsWith("http")) {
+                                extractedVideoUrl = cleanMp4Url
+                                Log.d(TAG, "Layer 0 found direct embed MP4: $extractedVideoUrl")
+                            }
+                        }
+
+                        // 2. Extract Owner username
+                        if (extractedUsername == null) {
+                            val userMatcher = Pattern.compile("\"owner\"\\s*:\\s*\\{[^}]*\"username\"\\s*:\\s*\"([^\"]+)\"").matcher(html)
+                            if (userMatcher.find()) {
+                                extractedUsername = userMatcher.group(1)
+                            }
+                        }
+
+                        // 3. Extract Caption text
+                        if (extractedCaption == null) {
+                            val capMatcher = Pattern.compile("\"edge_media_to_caption\"\\s*:\\s*\\{[^}]*\"text\"\\s*:\\s*\"([^\"]+)\"").matcher(html)
+                            if (capMatcher.find()) {
+                                extractedCaption = capMatcher.group(1)
+                                    .replace("\\n", "\n")
+                                    .replace("\\\"", "\"")
+                                    .replace("\\u0026", "&")
+                            }
+                        }
+
+                        // 4. Extract Likes
+                        if (extractedLikes == null) {
+                            val likeMatcher = Pattern.compile("\"edge_liked_by\"\\s*:\\s*\\{\\s*\"count\"\\s*:\\s*(\\d+)").matcher(html)
+                            if (likeMatcher.find()) {
+                                extractedLikes = likeMatcher.group(1).toIntOrNull()
+                            }
+                        }
+
+                        // 5. Extract Views
+                        if (extractedViews == null) {
+                            val viewMatcher = Pattern.compile("\"video_view_count\"\\s*:\\s*(\\d+)").matcher(html)
+                            if (viewMatcher.find()) {
+                                extractedViews = viewMatcher.group(1).toIntOrNull()
+                            }
+                        }
+
+                        // 6. Extract Thumbnail
+                        if (extractedThumbUrl == null) {
+                            val thumbMatcher = Pattern.compile("\"display_url\"\\s*:\\s*\"([^\"]+)\"").matcher(html)
+                            if (thumbMatcher.find()) {
+                                extractedThumbUrl = thumbMatcher.group(1).replace("\\/", "/")
+                            } else {
+                                val jpgMatcher = Pattern.compile("(https?:[\\\\/]+[^\\s\"'<>]+\\.jpg[^\\s\"'<>]*)").matcher(html)
+                                if (jpgMatcher.find()) {
+                                    extractedThumbUrl = jpgMatcher.group(1).replace("\\/", "/").replace("\\u0026", "&")
+                                }
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.d(TAG, "Layer 0 embed extraction error: ${e.message}")
+                }
+            }
+        } catch (e: Exception) {
+            Log.d(TAG, "Layer 0 error: ${e.message}")
+        }
 
         // --- LAYER 1: Instagram Private Web API with official Web Client App ID ---
         try {
@@ -329,33 +444,53 @@ object InstagramVideoDownloader {
      */
     private fun downloadStreamToFile(context: Context, videoUrl: String, prefix: String): Uri? {
         return try {
+            val cleanVideoUrl = sanitizeVideoUrl(videoUrl)
             val safePrefix = prefix.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(40)
             val cacheFile = File(context.cacheDir, "ig_reel_${safePrefix}.mp4")
 
-            // If already downloaded and valid (>10KB), reuse it instantly
-            if (cacheFile.exists() && cacheFile.length() > 10_000) {
+            // If already downloaded and valid (>100KB), reuse it instantly
+            if (cacheFile.exists() && cacheFile.length() > 100_000) {
                 Log.d(TAG, "Using existing cached reel file: ${cacheFile.absolutePath} (${cacheFile.length()} bytes)")
                 return Uri.fromFile(cacheFile)
             }
 
-            val req = Request.Builder()
-                .url(videoUrl)
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
-                .build()
+            val requestVariants = listOf(
+                Request.Builder()
+                    .url(cleanVideoUrl)
+                    .header("User-Agent", "Mozilla/5.0")
+                    .build(),
+                Request.Builder()
+                    .url(cleanVideoUrl)
+                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
+                    .header("Referer", "https://www.instagram.com/")
+                    .build(),
+                Request.Builder()
+                    .url(cleanVideoUrl)
+                    .header("User-Agent", "curl/7.88.1")
+                    .build()
+            )
 
-            val resp = httpClient.newCall(req).execute()
-            if (resp.isSuccessful && resp.body != null) {
-                val tempFile = File(context.cacheDir, "temp_ig_reel_${safePrefix}_${System.currentTimeMillis()}.mp4")
-                resp.body!!.byteStream().use { input ->
-                    FileOutputStream(tempFile).use { output ->
-                        input.copyTo(output)
+            for (req in requestVariants) {
+                try {
+                    val resp = httpClient.newCall(req).execute()
+                    if (resp.isSuccessful && resp.body != null) {
+                        val tempFile = File(context.cacheDir, "temp_ig_reel_${safePrefix}_${System.currentTimeMillis()}.mp4")
+                        resp.body!!.byteStream().use { input ->
+                            FileOutputStream(tempFile).use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+                        if (tempFile.exists() && tempFile.length() > 1000) {
+                            if (cacheFile.exists()) cacheFile.delete()
+                            tempFile.renameTo(cacheFile)
+                            Log.d(TAG, "Successfully downloaded reel video to: ${cacheFile.absolutePath} (${cacheFile.length()} bytes)")
+                            return Uri.fromFile(cacheFile)
+                        }
+                    } else {
+                        Log.d(TAG, "Download attempt failed with HTTP code ${resp.code}")
                     }
-                }
-                if (tempFile.exists() && tempFile.length() > 1000) {
-                    if (cacheFile.exists()) cacheFile.delete()
-                    tempFile.renameTo(cacheFile)
-                    Log.d(TAG, "Successfully downloaded reel video to: ${cacheFile.absolutePath} (${cacheFile.length()} bytes)")
-                    return Uri.fromFile(cacheFile)
+                } catch (e: Exception) {
+                    Log.d(TAG, "Download attempt exception: ${e.message}")
                 }
             }
             null

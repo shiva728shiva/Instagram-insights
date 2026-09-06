@@ -1,7 +1,10 @@
 package com.example.ui.screens
 
+import android.graphics.SurfaceTexture
 import android.media.MediaPlayer
 import android.net.Uri
+import android.view.Surface
+import android.view.TextureView
 import android.widget.VideoView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -53,6 +56,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -83,6 +87,134 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
+fun ReelTextureVideoPlayer(
+    videoUriStr: String,
+    isPlaying: Boolean,
+    modifier: Modifier = Modifier
+) {
+    var isPrepared by remember { mutableStateOf(false) }
+    var mediaPlayerRef by remember { mutableStateOf<MediaPlayer?>(null) }
+    val currentIsPlaying by rememberUpdatedState(isPlaying)
+
+    AndroidView(
+        factory = { ctx ->
+            TextureView(ctx).apply {
+                surfaceTextureListener = object : TextureView.SurfaceTextureListener {
+                    override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
+                        try {
+                            mediaPlayerRef?.release()
+                            val mp = MediaPlayer().apply {
+                                setSurface(Surface(surface))
+                                val parsedUri = if (videoUriStr.startsWith("/")) {
+                                    Uri.fromFile(java.io.File(videoUriStr))
+                                } else {
+                                    Uri.parse(videoUriStr)
+                                }
+                                setDataSource(ctx, parsedUri)
+                                isLooping = true
+                                setVolume(1f, 1f)
+                                setOnPreparedListener { player ->
+                                    isPrepared = true
+                                    adjustAspectRatio(width, height, player.videoWidth, player.videoHeight)
+                                    if (currentIsPlaying) {
+                                        player.start()
+                                    }
+                                }
+                                setOnErrorListener { _, what, extra ->
+                                    android.util.Log.e("ReelPlayer", "MediaPlayer error: what=$what, extra=$extra")
+                                    true
+                                }
+                                prepareAsync()
+                            }
+                            mediaPlayerRef = mp
+                        } catch (e: Exception) {
+                            android.util.Log.e("ReelPlayer", "Error initializing MediaPlayer", e)
+                        }
+                    }
+
+                    override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
+                        mediaPlayerRef?.let { mp ->
+                            if (mp.videoWidth > 0 && mp.videoHeight > 0) {
+                                adjustAspectRatio(width, height, mp.videoWidth, mp.videoHeight)
+                            }
+                        }
+                    }
+
+                    override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
+                        try {
+                            mediaPlayerRef?.let {
+                                if (it.isPlaying) it.stop()
+                                it.reset()
+                                it.release()
+                            }
+                        } catch (_: Exception) {}
+                        mediaPlayerRef = null
+                        isPrepared = false
+                        return true
+                    }
+
+                    override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {}
+
+                    private fun adjustAspectRatio(viewWidth: Int, viewHeight: Int, videoWidth: Int, videoHeight: Int) {
+                        if (viewWidth == 0 || viewHeight == 0 || videoWidth == 0 || videoHeight == 0) return
+                        val viewRatio = viewWidth.toFloat() / viewHeight.toFloat()
+                        val videoRatio = videoWidth.toFloat() / videoHeight.toFloat()
+
+                        val matrix = android.graphics.Matrix()
+                        val scaleX: Float
+                        val scaleY: Float
+
+                        // Center crop to fill screen like vertical Reels
+                        if (videoRatio > viewRatio) {
+                            scaleX = videoRatio / viewRatio
+                            scaleY = 1.0f
+                        } else {
+                            scaleX = 1.0f
+                            scaleY = viewRatio / videoRatio
+                        }
+
+                        val pivotX = viewWidth / 2.0f
+                        val pivotY = viewHeight / 2.0f
+                        matrix.setScale(scaleX, scaleY, pivotX, pivotY)
+                        setTransform(matrix)
+                    }
+                }
+            }
+        },
+        update = {
+            mediaPlayerRef?.let { mp ->
+                if (isPrepared) {
+                    try {
+                        if (isPlaying && !mp.isPlaying) {
+                            mp.start()
+                        } else if (!isPlaying && mp.isPlaying) {
+                            mp.pause()
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("ReelPlayer", "Error updating playback state", e)
+                    }
+                }
+            }
+        },
+        modifier = modifier
+    )
+
+    DisposableEffect(videoUriStr) {
+        onDispose {
+            try {
+                mediaPlayerRef?.let {
+                    if (it.isPlaying) it.stop()
+                    it.reset()
+                    it.release()
+                }
+            } catch (_: Exception) {}
+            mediaPlayerRef = null
+            isPrepared = false
+        }
+    }
+}
+
+@Composable
 fun ReelPlayerScreen(
     reel: ReelItem,
     onBackToProfile: () -> Unit,
@@ -97,7 +229,6 @@ fun ReelPlayerScreen(
     var isLiked by remember { mutableStateOf(false) }
     var likesCount by remember(reel) { mutableIntStateOf(reel.likesCount) }
     var isSaved by remember { mutableStateOf(false) }
-    var videoViewRef by remember { mutableStateOf<VideoView?>(null) }
     var showTempActionIndicator by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     var hideIndicatorJob by remember { mutableStateOf<Job?>(null) }
@@ -122,29 +253,30 @@ fun ReelPlayerScreen(
     var isAutoDownloading by remember { mutableStateOf(false) }
 
     // If video is currently using fallback and reel has an Instagram link, auto-download highest quality video in background
-    LaunchedEffect(reel.id) {
-        val needsDownload = (localVideoUriState == fallbackSampleUri) &&
-            (reel.id.contains("reel_") || reel.thumbnailUrl.startsWith("http") || (reel.videoUrl.isNotBlank() && reel.videoUrl.startsWith("http")))
-        if (needsDownload) {
-            isAutoDownloading = true
-            try {
-                val link = if (reel.videoUrl.isNotBlank() && reel.videoUrl.startsWith("http")) {
-                    reel.videoUrl
-                } else if (reel.thumbnailUrl.startsWith("http")) {
-                    reel.thumbnailUrl
-                } else {
-                    reel.id
+    LaunchedEffect(reel.id, reel.videoUrl, localVideoUriState) {
+        val isUsingFallback = (localVideoUriState == fallbackSampleUri)
+        if (isUsingFallback) {
+            val candidateCode = com.example.data.InstagramLinkFetcher.extractShortcode(reel.videoUrl).takeIf { !it.isNullOrBlank() }
+                ?: com.example.data.InstagramLinkFetcher.extractShortcode(reel.id)
+                ?: if (reel.id.startsWith("ig_imported_")) {
+                    reel.id.removePrefix("ig_imported_").substringBefore("_")
+                } else null
+
+            if (candidateCode != null && candidateCode.length in 5..35 && !candidateCode.startsWith("reel_")) {
+                isAutoDownloading = true
+                try {
+                    val link = "https://www.instagram.com/reel/$candidateCode/"
+                    val res = InstagramVideoDownloader.downloadReel(context, link)
+                    if (res.localVideoUri != null) {
+                        val uriStr = res.localVideoUri.toString()
+                        localVideoUriState = uriStr
+                        onUpdateVideoUri(uriStr)
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("ReelPlayerScreen", "Auto-download failed: ${e.message}")
+                } finally {
+                    isAutoDownloading = false
                 }
-                val res = InstagramVideoDownloader.downloadReel(context, link)
-                if (res.localVideoUri != null) {
-                    val uriStr = res.localVideoUri.toString()
-                    localVideoUriState = uriStr
-                    onUpdateVideoUri(uriStr)
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("ReelPlayerScreen", "Auto-download failed: ${e.message}")
-            } finally {
-                isAutoDownloading = false
             }
         }
     }
@@ -171,46 +303,24 @@ fun ReelPlayerScreen(
                 }
         ) {
             val activeUriStr = localVideoUriState ?: fallbackSampleUri
-            key(activeUriStr) {
-                AndroidView(
-                    factory = { ctx ->
-                        VideoView(ctx).apply {
-                            val uri = if (activeUriStr.startsWith("/")) {
-                                Uri.fromFile(java.io.File(activeUriStr))
-                            } else {
-                                Uri.parse(activeUriStr)
-                            }
-                            setVideoURI(uri)
-                            setOnPreparedListener { mp ->
-                                mp.isLooping = true
-                                mp.setVolume(1f, 1f)
-                                try {
-                                    mp.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
-                                } catch (_: Exception) {}
-                                if (isPlaying) start()
-                            }
-                            setOnErrorListener { _, what, extra ->
-                                android.util.Log.e("ReelPlayer", "Video error: what=$what, extra=$extra")
-                                true // Handled: suppresses system "Can't play this video" alert dialog
-                            }
-                            videoViewRef = this
-                        }
-                    },
-                    update = { view ->
-                        if (isPlaying) {
-                            if (!view.isPlaying) view.start()
-                        } else {
-                            if (view.isPlaying) view.pause()
-                        }
-                    },
+
+            // Instant crisp visual thumbnail while video prepares or plays
+            if (reel.thumbnailUrl.isNotBlank()) {
+                AsyncImage(
+                    model = reel.thumbnailUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
+            }
 
-                DisposableEffect(activeUriStr) {
-                    onDispose {
-                        videoViewRef?.stopPlayback()
-                    }
-                }
+            // Smooth hardware accelerated TextureView MediaPlayer with seamless looping
+            key(activeUriStr) {
+                ReelTextureVideoPlayer(
+                    videoUriStr = activeUriStr,
+                    isPlaying = isPlaying,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
 
             // Top gradient overlay for header readability

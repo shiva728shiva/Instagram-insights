@@ -44,16 +44,16 @@ object InstagramLinkFetcher {
     }
 
     /**
-     * Extracts the shortcode from any Instagram Reel or Post URL.
+     * Extracts the shortcode from any Instagram Reel or Post URL or partial shortcode string.
      */
     fun extractShortcode(input: String): String? {
         val clean = input.trim()
         if (clean.isEmpty()) return null
 
         val patterns = listOf(
+            Pattern.compile("(?:reel|reels|p|share/reel)/([a-zA-Z0-9_-]+)"),
             Pattern.compile("instagram\\.com/(?:reel|reels|p)/([a-zA-Z0-9_-]+)"),
-            Pattern.compile("instagram\\.com/share/reel/([a-zA-Z0-9_-]+)"),
-            Pattern.compile("^([a-zA-Z0-9_-]{6,15})$")
+            Pattern.compile("instagram\\.com/share/reel/([a-zA-Z0-9_-]+)")
         )
 
         for (pattern in patterns) {
@@ -65,6 +65,20 @@ object InstagramLinkFetcher {
                 }
             }
         }
+
+        // Support direct shortcode with query params or slashes, e.g. "Dc6EP5KP_pA/?stkn=..." or "Dc6EP5KP_pA"
+        val firstSegment = clean.split('?', '&', '#')[0].trim().trimEnd('/')
+        val lastPath = firstSegment.substringAfterLast('/')
+        val candidate = lastPath.trim()
+        if (candidate.matches(Regex("^[a-zA-Z0-9_-]{5,30}$"))) {
+            return candidate
+        }
+
+        val generalMatcher = Pattern.compile("([a-zA-Z0-9_-]{9,15})").matcher(clean)
+        if (generalMatcher.find()) {
+            return generalMatcher.group(1)
+        }
+
         return null
     }
 
