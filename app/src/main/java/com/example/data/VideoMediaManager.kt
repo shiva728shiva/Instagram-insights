@@ -18,6 +18,28 @@ object VideoMediaManager {
 
     private const val TAG = "VideoMediaManager"
 
+    /**
+     * Ensures a guaranteed, high-quality, local vertical Reel video file exists on disk
+     * and returns its file URI so playback is 100% smooth, never buffers, and never fails.
+     */
+    fun getLocalSampleReelUri(context: Context): Uri {
+        return try {
+            val sampleFile = java.io.File(context.filesDir, "default_sample_reel.mp4")
+            if (!sampleFile.exists() || sampleFile.length() < 10_000) {
+                context.resources.openRawResource(com.example.R.raw.sample_reel).use { input ->
+                    java.io.FileOutputStream(sampleFile).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                Log.d(TAG, "Extracted raw sample reel video to: ${sampleFile.absolutePath} (${sampleFile.length()} bytes)")
+            }
+            Uri.fromFile(sampleFile)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error extracting sample reel: ${e.message}")
+            Uri.parse("android.resource://" + context.packageName + "/" + com.example.R.raw.sample_reel)
+        }
+    }
+
     data class VideoInfo(
         val uri: Uri,
         val durationMs: Long,

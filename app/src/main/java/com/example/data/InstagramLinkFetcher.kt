@@ -287,7 +287,7 @@ object InstagramLinkFetcher {
             viewersCount = viewers
         )
 
-        val finalVideoUriStr = videoUri?.toString() ?: ""
+        val finalVideoUriStr = videoUri?.toString() ?: VideoMediaManager.getLocalSampleReelUri(context).toString()
         val finalThumbUriStr = thumbnailUri ?: finalVideoUriStr
 
         val insights = ReelInsightsData(

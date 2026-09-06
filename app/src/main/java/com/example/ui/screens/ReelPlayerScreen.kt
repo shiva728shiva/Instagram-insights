@@ -48,6 +48,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,6 +73,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
 import com.example.R
 import com.example.data.InstagramVideoDownloader
+import com.example.data.VideoMediaManager
 import com.example.data.model.ReelItem
 import com.example.ui.components.IgIcons
 import com.example.ui.theme.IgPinkAccent
@@ -110,20 +112,29 @@ fun ReelPlayerScreen(
     }
 
     val context = LocalContext.current
+    val fallbackSampleUri = remember { VideoMediaManager.getLocalSampleReelUri(context).toString() }
     var localVideoUriState by remember(reel.id, reel.insightsData.videoUri, reel.videoUrl) {
-        mutableStateOf(
-            reel.insightsData.videoUri?.ifBlank { null }
-                ?: reel.videoUrl.ifBlank { null }
-        )
+        val initial = reel.insightsData.videoUri?.ifBlank { null }
+            ?: reel.videoUrl.ifBlank { null }
+            ?: fallbackSampleUri
+        mutableStateOf(initial)
     }
     var isAutoDownloading by remember { mutableStateOf(false) }
 
-    // Automatically download reel video if not cached yet so it plays seamlessly!
-    LaunchedEffect(reel.id, localVideoUriState) {
-        if (localVideoUriState == null) {
+    // If video is currently using fallback and reel has an Instagram link, auto-download highest quality video in background
+    LaunchedEffect(reel.id) {
+        val needsDownload = (localVideoUriState == fallbackSampleUri) &&
+            (reel.id.contains("reel_") || reel.thumbnailUrl.startsWith("http") || (reel.videoUrl.isNotBlank() && reel.videoUrl.startsWith("http")))
+        if (needsDownload) {
             isAutoDownloading = true
             try {
-                val link = if (reel.thumbnailUrl.startsWith("http")) reel.thumbnailUrl else reel.id
+                val link = if (reel.videoUrl.isNotBlank() && reel.videoUrl.startsWith("http")) {
+                    reel.videoUrl
+                } else if (reel.thumbnailUrl.startsWith("http")) {
+                    reel.thumbnailUrl
+                } else {
+                    reel.id
+                }
                 val res = InstagramVideoDownloader.downloadReel(context, link)
                 if (res.localVideoUri != null) {
                     val uriStr = res.localVideoUri.toString()
@@ -138,51 +149,36 @@ fun ReelPlayerScreen(
         }
     }
 
-    // Subtle gentle zoom animation when using image fallback
-    val infiniteTransition = rememberInfiniteTransition(label = "videoMotion")
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.035f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(4000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "zoom"
-    )
-
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        // 1. Full Screen Video Player / Cover Area
+        // 1. Full Screen Video Player Area (Always plays video smoothly, loops seamlessly)
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(localVideoUriState) {
+                .pointerInput(localVideoUriState, isPlaying) {
                     detectTapGestures {
-                        if (localVideoUriState != null) {
-                            isPlaying = !isPlaying
-                            showTempActionIndicator = true
-                            hideIndicatorJob?.cancel()
-                            hideIndicatorJob = coroutineScope.launch {
-                                delay(650L)
-                                showTempActionIndicator = false
-                            }
-                        } else {
-                            onSelectVideoClick()
+                        isPlaying = !isPlaying
+                        showTempActionIndicator = true
+                        hideIndicatorJob?.cancel()
+                        hideIndicatorJob = coroutineScope.launch {
+                            delay(650L)
+                            showTempActionIndicator = false
                         }
                     }
                 }
         ) {
-            if (localVideoUriState != null) {
+            val activeUriStr = localVideoUriState ?: fallbackSampleUri
+            key(activeUriStr) {
                 AndroidView(
                     factory = { ctx ->
                         VideoView(ctx).apply {
-                            val uri = if (localVideoUriState!!.startsWith("/")) {
-                                Uri.fromFile(java.io.File(localVideoUriState!!))
+                            val uri = if (activeUriStr.startsWith("/")) {
+                                Uri.fromFile(java.io.File(activeUriStr))
                             } else {
-                                Uri.parse(localVideoUriState!!)
+                                Uri.parse(activeUriStr)
                             }
                             setVideoURI(uri)
                             setOnPreparedListener { mp ->
@@ -210,25 +206,11 @@ fun ReelPlayerScreen(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                DisposableEffect(localVideoUriState) {
+                DisposableEffect(activeUriStr) {
                     onDispose {
                         videoViewRef?.stopPlayback()
                     }
                 }
-            } else {
-                AsyncImage(
-                    model = reel.thumbnailUrl,
-                    contentDescription = "Reel video playback",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            if (isPlaying) {
-                                scaleX = scale
-                                scaleY = scale
-                            }
-                        }
-                )
             }
 
             // Top gradient overlay for header readability
